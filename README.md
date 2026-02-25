@@ -1,2 +1,2 @@
 # POS-JJ
-sistema POS para empresas pequeñas
+sistema POS de facturación, ventas e invenatrio para empresas 
