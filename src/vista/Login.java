@@ -6,6 +6,7 @@
 package vista;
 
 import java.awt.Dimension;
+import controlador.Ctrl_Usuario;
 
 /**
  *
@@ -22,7 +23,101 @@ public class Login extends javax.swing.JFrame {
         this.setLocationRelativeTo(null);
         this.setTitle("POS JJ");
         this.setSize(new Dimension(700, 500));
+        
+        // ✅ Accion del boton iniciar sesion
+        jButton_inciarsesion.addActionListener(e -> iniciarSesion());
+
+        // ✅ También permite presionar Enter en el campo contraseña
+        txt_contraseña.addActionListener(e -> iniciarSesion());
     }
+        // ===================== METODO INICIAR SESION =====================
+    private void iniciarSesion() {
+        String usuario = txt_usuario.getText().trim();
+        String password = new String(txt_contraseña.getPassword()).trim();
+
+        // Validacion: ambos campos vacios
+        if (usuario.isEmpty() && password.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Por favor ingresa el usuario y la contraseña.",
+                "Campos vacíos",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            txt_usuario.requestFocus();
+            return;
+        }
+
+        // Validacion: solo usuario vacio
+        if (usuario.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Por favor ingresa el usuario.",
+                "Campo vacío",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            txt_usuario.requestFocus();
+            return;
+        }
+
+        // Validacion: solo contraseña vacia
+        if (password.isEmpty()) {
+            javax.swing.JOptionPane.showMessageDialog(this,
+                "Por favor ingresa la contraseña.",
+                "Campo vacío",
+                javax.swing.JOptionPane.WARNING_MESSAGE);
+            txt_contraseña.requestFocus();
+            return;
+        }
+
+        // Llamada al controlador
+        Ctrl_Usuario ctrl = new Ctrl_Usuario();
+        int resultado = ctrl.loginUser(usuario, password);
+
+        switch (resultado) {
+
+            case Ctrl_Usuario.LOGIN_OK:
+                modelo.Usuario obj = ctrl.getUsuarioLogueado();
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "¡Bienvenido, " + obj.getNombre() + " " + obj.getApellido() + "!",
+                    "Acceso exitoso",
+                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                // new MenuPrincipal().setVisible(true); // ← Descomenta cuando tengas el menú
+                this.dispose();
+                break;
+
+            case Ctrl_Usuario.USUARIO_NO_EXISTE:
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "El usuario \"" + usuario + "\" no existe.\nVerifica e inténtalo de nuevo.",
+                    "Usuario no encontrado",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                txt_usuario.requestFocus();
+                txt_usuario.selectAll();
+                break;
+
+            case Ctrl_Usuario.PASSWORD_INCORRECTA:
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Contraseña incorrecta.\nInténtalo de nuevo.",
+                    "Contraseña incorrecta",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                txt_contraseña.setText("");
+                txt_contraseña.requestFocus();
+                break;
+
+            case Ctrl_Usuario.CUENTA_INACTIVA:
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "Tu cuenta está desactivada.\nContacta al administrador.",
+                    "Cuenta inactiva",
+                    javax.swing.JOptionPane.WARNING_MESSAGE);
+                txt_usuario.setText("");
+                txt_contraseña.setText("");
+                txt_usuario.requestFocus();
+                break;
+
+            case Ctrl_Usuario.ERROR_CONEXION:
+                javax.swing.JOptionPane.showMessageDialog(this,
+                    "No se pudo conectar a la base de datos.\nVerifica la conexión.",
+                    "Error de conexión",
+                    javax.swing.JOptionPane.ERROR_MESSAGE);
+                break;
+        }
+    }
+    // =================================================================
 
     /** This method is called from within the constructor to
      * initialize the form.
