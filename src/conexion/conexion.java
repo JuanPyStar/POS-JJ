@@ -25,7 +25,7 @@ public class conexion {
             System.out.println("Error en la conexión: " + e.getMessage());
         }
         return cn;
-    }
+    } 
 
     // ✅ AGREGA ESTO TEMPORALMENTE PARA PROBAR
     public static void main(String[] args) {
