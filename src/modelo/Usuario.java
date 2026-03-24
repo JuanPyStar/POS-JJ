@@ -4,10 +4,7 @@
  */
 package modelo;
 
-/**
- *
- * @author JDJju
- */
+
 public class Usuario {
     //Atributos
     private int idUsuario;
