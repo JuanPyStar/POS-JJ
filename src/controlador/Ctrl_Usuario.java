@@ -30,7 +30,6 @@ public class Ctrl_Usuario {
         if (cn == null) return ERROR_CONEXION;
 
         try {
-            // Primero verificamos si el usuario existe
             String sql = "SELECT * FROM tb_usuario WHERE usuario = ?";
             PreparedStatement ps = cn.prepareStatement(sql);
             ps.setString(1, usuario);
