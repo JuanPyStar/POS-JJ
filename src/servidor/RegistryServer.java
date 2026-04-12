@@ -39,7 +39,7 @@ public class RegistryServer {
             // Leer la solicitud enviada por el cliente o servidor
             String solicitud = in.readLine();
 
-            // 🔹 Operación BIND (registro de servicio)
+            //  Operación BIND (registro de servicio)
             if (solicitud.startsWith("BIND")) {
                 // Formato: BIND nombreServicio IP:Puerto
                 String[] partes = solicitud.split(" ");
@@ -50,7 +50,7 @@ public class RegistryServer {
                 out.println("OK");
                 System.out.println("Servicio registrado: " + partes[1]);
 
-            // 🔹 Operación LOOKUP (búsqueda de servicio)
+            //  Operación LOOKUP (búsqueda de servicio)
             } else if (solicitud.startsWith("LOOKUP")) {
                 // Formato: LOOKUP nombreServicio
                 String[] partes = solicitud.split(" ");

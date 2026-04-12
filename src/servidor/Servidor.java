@@ -11,10 +11,10 @@ public class Servidor {
         String nombreServicio = "servicioBD"; // Nombre lógico del servicio
         String direccion = "localhost:5000";  // Dirección física del servidor
 
-        // 🔹 Registro automático en el Registry (BIND)
+        //  Registro automático en el Registry (BIND)
         registrarEnRegistry(nombreServicio, direccion);
 
-        // 🔹 Servidor que escucha peticiones del cliente
+        //  Servidor que escucha peticiones del cliente
         try (ServerSocket serverSocket = new ServerSocket(5000)) {
             System.out.println("Servidor listo en puerto 5000");
 

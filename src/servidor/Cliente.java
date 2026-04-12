@@ -8,7 +8,7 @@ public class Cliente {
 
     public static void main(String[] args) {
 
-        // 🔹 Solicitar al Registry la dirección del servicio (LOOKUP)
+        //  Solicitar al Registry la dirección del servicio (LOOKUP)
         String direccion = consultarRegistry("servicioBD");
 
         // Validar si el servicio existe

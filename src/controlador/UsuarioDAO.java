@@ -16,7 +16,7 @@ public class UsuarioDAO {
     PreparedStatement ps;
     ResultSet rs;
 
-    // 🟢 Crear usuario
+    //  Crear usuario
     public boolean crearUsuario(Usuario u) {
         String sql = "INSERT INTO usuario (nombre, apellido, usuario, password, telefono, estado) VALUES (?, ?, ?, ?, ?, ?)";
         try {
@@ -39,7 +39,7 @@ public class UsuarioDAO {
         }
     }
 
-    // 🔵 Consultar todos
+    //  Consultar todos
     public List<Usuario> listarUsuarios() {
         List<Usuario> lista = new ArrayList<>();
         String sql = "SELECT * FROM usuario";
@@ -70,7 +70,7 @@ public class UsuarioDAO {
         return lista;
     }
 
-    // 🔍 Buscar por ID
+    //  Buscar por ID
     public Usuario buscarUsuario(int id) {
         String sql = "SELECT * FROM usuario WHERE idUsuario = ?";
         Usuario u = new Usuario();
@@ -99,7 +99,7 @@ public class UsuarioDAO {
         return u;
     }
 
-    // 🟡 Actualizar
+    //  Actualizar
     public boolean actualizarUsuario(Usuario u) {
         String sql = "UPDATE usuario SET nombre=?, apellido=?, usuario=?, password=?, telefono=?, estado=? WHERE idUsuario=?";
 
@@ -124,7 +124,7 @@ public class UsuarioDAO {
         }
     }
 
-    // 🔴 Eliminar
+    //  Eliminar
     public boolean eliminarUsuario(int id) {
         String sql = "DELETE FROM usuario WHERE idUsuario=?";
 
