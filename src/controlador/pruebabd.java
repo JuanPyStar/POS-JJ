@@ -9,11 +9,11 @@ public class pruebabd {
 
         UsuarioDAO dao = new UsuarioDAO();
 
-        // 🔥 PRUEBA CONEXIÓN
+        // PRUEBA CONEXIÓN
         System.out.println("Probando conexión...");
         dao.listarUsuarios();
 
-        // 🟢 CREAR USUARIO
+        //  CREAR USUARIO
         Usuario u = new Usuario();
         u.setNombre("Juan");
         u.setApellido("Perez");
@@ -24,22 +24,22 @@ public class pruebabd {
 
         dao.crearUsuario(u);
 
-        // 🔵 LISTAR USUARIOS
+        //  LISTAR USUARIOS
         List<Usuario> lista = dao.listarUsuarios();
         for (Usuario user : lista) {
             System.out.println(user.getNombre() + " " + user.getApellido());
         }
 
-        // 🟡 ACTUALIZAR
+        // ACTUALIZAR
         u.setIdUsuario(1); // cambia el ID según tu BD
         u.setNombre("Juan Actualizado");
         dao.actualizarUsuario(u);
 
-        // 🔍 BUSCAR
+        // BUSCAR
         Usuario encontrado = dao.buscarUsuario(1);
         System.out.println("Usuario encontrado: " + encontrado.getNombre());
 
-        // 🔴 ELIMINAR
+        //  ELIMINAR
         dao.eliminarUsuario(1);
     }
 }
