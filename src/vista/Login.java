@@ -77,7 +77,7 @@ public class Login extends javax.swing.JFrame {
                     "¡Bienvenido, " + obj.getNombre() + " " + obj.getApellido() + "!",
                     "Acceso exitoso",
                     javax.swing.JOptionPane.INFORMATION_MESSAGE);
-                // new MenuPrincipal().setVisible(true); // ← Descomenta cuando tengas el menú
+                new Menu(obj).setVisible(true);
                 this.dispose();
                 break;
 

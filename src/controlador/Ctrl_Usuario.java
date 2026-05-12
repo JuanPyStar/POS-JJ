@@ -64,6 +64,7 @@ public class Ctrl_Usuario {
             usuarioLogueado.setPassword(rs.getString("password"));
             usuarioLogueado.setTelefono(rs.getString("telefono"));
             usuarioLogueado.setEstado(estado);
+            usuarioLogueado.setRol(rs.getString("rol")); // ← Agregamos el rol
 
             rs.close(); ps.close(); cn.close();
             return LOGIN_OK;
