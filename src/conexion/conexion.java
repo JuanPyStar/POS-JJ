@@ -15,7 +15,7 @@ public class conexion {
         Connection cn = null;
         try {
             cn = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/bd_posjj",
+                    "jdbc:mysql://localhost:3307/bd_posjj",
                     "root",
                     "root123"
             );
