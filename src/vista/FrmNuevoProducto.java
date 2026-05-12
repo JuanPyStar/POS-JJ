@@ -15,9 +15,15 @@ public class FrmNuevoProducto extends JDialog {
     private JComboBox<Categoria> cbCategoria;
     private Color colorAzulPrincipal = new Color(102, 153, 255);
     private Color colorFondo = new Color(255, 255, 255);
+    private Producto productoEditar;
 
     public FrmNuevoProducto(Frame parent) {
-        super(parent, "Registrar Nuevo Producto", true);
+        this(parent, null);
+    }
+
+    public FrmNuevoProducto(Frame parent, Producto producto) {
+        super(parent, producto == null ? "Registrar Nuevo Producto" : "Editar Producto", true);
+        this.productoEditar = producto;
         this.setSize(450, 550);
         this.setLocationRelativeTo(parent);
         this.setLayout(new BorderLayout());
@@ -25,6 +31,9 @@ public class FrmNuevoProducto extends JDialog {
 
         inicializarComponentes();
         cargarCategorias();
+        if (productoEditar != null) {
+            cargarProducto();
+        }
     }
 
     private void inicializarComponentes() {
@@ -83,7 +92,7 @@ public class FrmNuevoProducto extends JDialog {
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         panelBotones.setBackground(colorFondo);
 
-        JButton btnGuardar = new JButton("Guardar Producto");
+        JButton btnGuardar = new JButton(productoEditar == null ? "Guardar Producto" : "Actualizar Producto");
         btnGuardar.setBackground(colorAzulPrincipal);
         btnGuardar.setForeground(Color.WHITE);
         btnGuardar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
@@ -109,6 +118,23 @@ public class FrmNuevoProducto extends JDialog {
         
         for (Categoria c : lista) {
             cbCategoria.addItem(c);
+        }
+    }
+
+    private void cargarProducto() {
+        if (productoEditar == null) return;
+        txtNombre.setText(productoEditar.getNombre());
+        txtCantidad.setText(String.valueOf(productoEditar.getCantidad()));
+        txtPrecio.setText(String.valueOf(productoEditar.getPrecio()));
+        txtDescripcion.setText(productoEditar.getDescripcion());
+        txtIva.setText(String.valueOf(productoEditar.getPorcentajeIva()));
+
+        for (int i = 0; i < cbCategoria.getItemCount(); i++) {
+            Categoria cat = cbCategoria.getItemAt(i);
+            if (cat.getIdCategoria() == productoEditar.getIdCategoria()) {
+                cbCategoria.setSelectedIndex(i);
+                break;
+            }
         }
     }
 
@@ -152,8 +178,15 @@ public class FrmNuevoProducto extends JDialog {
             p.setEstado(1); // 1 = Activo
 
             Ctrl_Producto ctrl = new Ctrl_Producto();
-            if (ctrl.guardar(p)) {
-                JOptionPane.showMessageDialog(this, "Producto guardado correctamente");
+            boolean ok;
+            if (productoEditar == null) {
+                ok = ctrl.guardar(p);
+            } else {
+                p.setIdProducto(productoEditar.getIdProducto());
+                ok = ctrl.actualizar(p);
+            }
+            if (ok) {
+                JOptionPane.showMessageDialog(this, productoEditar == null ? "Producto guardado correctamente" : "Producto actualizado correctamente");
                 this.dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Error al guardar el producto. Verifica la consola.");

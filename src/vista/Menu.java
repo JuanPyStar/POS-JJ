@@ -17,6 +17,7 @@ public class Menu extends JFrame {
     private PanelHistorialFacturas panelHistorial;
     private PanelDetalleFactura panelDetalle;
     private PanelResumenVentas panelResumen;
+    private PanelVentasDelDia panelVentasDelDia;
 
     // Colores del DISEÑO ORIGINAL DEL USUARIO (Login)
     private Color colorFondoLateral = new Color(102, 153, 255); // Azul claro
@@ -126,10 +127,12 @@ public class Menu extends JFrame {
         panelHistorial = new PanelHistorialFacturas(usuarioLogueado, this);
         panelDetalle = new PanelDetalleFactura(this);
         panelResumen = new PanelResumenVentas(usuarioLogueado, this);
+        panelVentasDelDia = new PanelVentasDelDia(usuarioLogueado, this);
         
         panelContenido.add(panelHistorial, "Historial");
         panelContenido.add(panelDetalle, "DetalleFactura");
         panelContenido.add(panelResumen, "ResumenVentas");
+        panelContenido.add(panelVentasDelDia, "VentasDelDia");
 
         this.add(panelContenido, BorderLayout.CENTER);
 
@@ -216,6 +219,9 @@ public class Menu extends JFrame {
 
     // Método para permitir a los paneles cambiar de vista
     public void navegarA(String nombrePanel) {
+        if ("VentasDelDia".equals(nombrePanel)) {
+            panelVentasDelDia.refrescarDatos();
+        }
         cardLayout.show(panelContenido, nombrePanel);
     }
     
