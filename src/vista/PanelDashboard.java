@@ -4,6 +4,7 @@ import controlador.Ctrl_Dashboard;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import modelo.Usuario;
@@ -76,12 +77,12 @@ public class PanelDashboard extends JPanel {
         panelCards.setPreferredSize(new Dimension(0, 150));
         
         // Se crean las cards y se les asigna la navegación
-        panelCards.add(crearCardClickeable("Ventas del Día", String.valueOf(ventasHoy), new Color(46, 204, 113), "Historial"));
+        panelCards.add(crearCardClickeable("Ventas del Día", String.valueOf(ventasHoy), new Color(46, 204, 113), "VentasDelDia"));
         panelCards.add(crearCardClickeable("Total Productos", String.valueOf(totalProductos), colorAzulPrincipal, "Productos"));
         panelCards.add(crearCardClickeable("Ingresos Netos", String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", ingresosHoy), new Color(155, 89, 182), "Reportes"));
         panelCards.add(crearCardClickeable("Usuarios Activos", String.valueOf(totalUsuarios), new Color(241, 196, 15), "Usuarios"));
 
-        // --- GRÁFICAS (Placeholder) ---
+        // --- GRÁFICAS ---
         JPanel panelGraficas = new JPanel(new BorderLayout());
         panelGraficas.setBackground(Color.WHITE);
         panelGraficas.setBorder(BorderFactory.createCompoundBorder(
@@ -89,10 +90,13 @@ public class PanelDashboard extends JPanel {
             new EmptyBorder(20, 20, 20, 20)
         ));
 
-        JLabel lblGrafica = new JLabel("Espacio para Gráfica de Ventas Semanales", SwingConstants.CENTER);
-        lblGrafica.setFont(new Font("Yu Gothic UI", Font.ITALIC, 24));
-        lblGrafica.setForeground(Color.LIGHT_GRAY);
-        panelGraficas.add(lblGrafica, BorderLayout.CENTER);
+        JLabel lblGrafica = new JLabel("Ventas Semanales", SwingConstants.LEFT);
+        lblGrafica.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 22));
+        lblGrafica.setForeground(colorTexto);
+        panelGraficas.add(lblGrafica, BorderLayout.NORTH);
+
+        List<Object[]> ventasSemanales = ctrl.getVentasSemanales();
+        panelGraficas.add(crearPanelGraficaVentasSemanales(ventasSemanales), BorderLayout.CENTER);
 
         // --- ENSAMBLAJE CENTRO ---
         JPanel panelCentro = new JPanel();
@@ -144,6 +148,74 @@ public class PanelDashboard extends JPanel {
             }
         });
 
+        return panel;
+    }
+
+    private JPanel crearPanelGraficaVentasSemanales(List<Object[]> datosVentas) {
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                int ancho = getWidth();
+                int alto = getHeight();
+                int padding = 50;
+                int textoAltura = 18;
+                g.setColor(new Color(250, 250, 250));
+                g.fillRect(0, 0, ancho, alto);
+
+                if (datosVentas == null || datosVentas.isEmpty()) {
+                    g.setColor(Color.GRAY);
+                    g.setFont(new Font("Yu Gothic UI", Font.ITALIC, 18));
+                    g.drawString("No hay ventas registradas en los últimos 7 días.", padding, alto / 2);
+                    return;
+                }
+
+                double maxValor = 0;
+                for (Object[] fila : datosVentas) {
+                    double valor = (double) fila[1];
+                    if (valor > maxValor) {
+                        maxValor = valor;
+                    }
+                }
+                if (maxValor == 0) {
+                    maxValor = 1;
+                }
+
+                int disponibleAncho = ancho - padding * 2;
+                int disponibleAlto = alto - padding * 2 - textoAltura * 2;
+                int barraAncho = Math.max(30, disponibleAncho / Math.max(1, datosVentas.size()) - 10);
+                int espacioEntreBarras = (disponibleAncho - barraAncho * datosVentas.size()) / Math.max(1, datosVentas.size() - 1);
+
+                g.setColor(new Color(220, 220, 220));
+                g.drawLine(padding, alto - padding - textoAltura, ancho - padding, alto - padding - textoAltura);
+
+                for (int i = 0; i < datosVentas.size(); i++) {
+                    Object[] fila = datosVentas.get(i);
+                    String etiqueta = fila[0].toString();
+                    double valor = (double) fila[1];
+                    int alturaBarra = (int) ((valor / maxValor) * disponibleAlto);
+
+                    int x = padding + i * (barraAncho + espacioEntreBarras);
+                    int y = alto - padding - textoAltura - alturaBarra;
+
+                    g.setColor(new Color(102, 153, 255));
+                    g.fillRect(x, y, barraAncho, alturaBarra);
+                    g.setColor(new Color(30, 30, 30));
+                    g.drawRect(x, y, barraAncho, alturaBarra);
+
+                    g.setFont(new Font("Yu Gothic UI", Font.PLAIN, 12));
+                    FontMetrics metrics = g.getFontMetrics();
+                    int labelWidth = metrics.stringWidth(etiqueta);
+                    g.drawString(etiqueta, x + Math.max(0, (barraAncho - labelWidth) / 2), alto - padding);
+
+                    String valorTexto = String.format("$%.0f", valor);
+                    int valorTextoWidth = metrics.stringWidth(valorTexto);
+                    g.drawString(valorTexto, x + Math.max(0, (barraAncho - valorTextoWidth) / 2), y - 8);
+                }
+            }
+        };
+        panel.setPreferredSize(new Dimension(0, 260));
+        panel.setBackground(Color.WHITE);
         return panel;
     }
 }

@@ -1,6 +1,6 @@
 package vista;
 
-import conexion.conexion;
+import controlador.Ctrl_Dashboard;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,9 +10,10 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import conexion.conexion;
 import modelo.Usuario;
 
-public class PanelHistorialFacturas extends JPanel {
+public class PanelVentasDelDia extends JPanel {
 
     private Usuario usuarioLogueado;
     private Menu menuPrincipal;
@@ -24,7 +25,7 @@ public class PanelHistorialFacturas extends JPanel {
     private Color colorFondo = new Color(255, 255, 255);
     private Color colorTexto = new Color(50, 50, 50);
 
-    public PanelHistorialFacturas(Usuario usuario, Menu menu) {
+    public PanelVentasDelDia(Usuario usuario, Menu menu) {
         this.usuarioLogueado = usuario;
         this.menuPrincipal = menu;
         
@@ -44,8 +45,7 @@ public class PanelHistorialFacturas extends JPanel {
         JPanel panelNorte = new JPanel(new BorderLayout());
         panelNorte.setBackground(colorFondo);
         
-        String titulo = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador") ? "Historial de Facturas" : "Historial de Facturas (Mis Ventas)";
-        JLabel lblTitulo = new JLabel(titulo);
+        JLabel lblTitulo = new JLabel("Ventas del Día");
         lblTitulo.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
         lblTitulo.setForeground(colorAzulPrincipal);
         
@@ -87,7 +87,7 @@ public class PanelHistorialFacturas extends JPanel {
         scrollPane.getViewport().setBackground(Color.WHITE);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
         
-        // Evento de doble clic para abrir detalles en el mismo panel de contenido
+        // Evento de doble clic para abrir detalles
         tablaFacturas.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 if (evt.getClickCount() == 2) {
@@ -106,40 +106,16 @@ public class PanelHistorialFacturas extends JPanel {
 
     private void cargarHistorial() {
         modeloFacturas.setRowCount(0);
-        Connection cn = conexion.conectar();
-        try {
-            // Solo facturas del usuario logueado en el día actual
-            StringBuilder sql = new StringBuilder(
-                "SELECT f.idFactura, f.numeroFactura, f.fechaFactura, f.totalPagar, p.metodoPago " +
-                "FROM tb_factura f " +
-                "LEFT JOIN tb_pago p ON f.idFactura = p.idFactura " +
-                "WHERE DATE(f.fechaFactura) = CURDATE() "
-            );
-
-            boolean isAdmin = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador");
-            if (!isAdmin) {
-                sql.append("AND f.idUsuario = ? ");
-            }
-            sql.append("ORDER BY f.idFactura DESC");
-                         
-            PreparedStatement ps = cn.prepareStatement(sql.toString());
-            if (!isAdmin) {
-                ps.setInt(1, usuarioLogueado.getIdUsuario());
-            }
-            ResultSet rs = ps.executeQuery();
-            
-            while(rs.next()) {
-                Object[] fila = new Object[5];
-                fila[0] = rs.getInt("idFactura");
-                fila[1] = rs.getString("numeroFactura");
-                fila[2] = rs.getString("fechaFactura");
-                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("totalPagar"));
-                fila[4] = rs.getString("metodoPago") != null ? rs.getString("metodoPago") : "N/A";
-                modeloFacturas.addRow(fila);
-            }
-            cn.close();
-        } catch (SQLException e) {
-            System.out.println("Error al cargar historial: " + e);
+        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+        
+        for (Object[] fila : ctrl.getFacturasDia()) {
+            Object[] filaFormato = new Object[5];
+            filaFormato[0] = fila[0]; // ID
+            filaFormato[1] = fila[1]; // Número Factura
+            filaFormato[2] = fila[2]; // Fecha
+            filaFormato[3] = "$ " + String.format("%.0f", (double) fila[3]); // Total con formato
+            filaFormato[4] = fila[4]; // Método Pago
+            modeloFacturas.addRow(filaFormato);
         }
     }
 
@@ -150,7 +126,6 @@ public class PanelHistorialFacturas extends JPanel {
         int idFactura = (int) tablaFacturas.getValueAt(fila, 0);
         String numFactura = tablaFacturas.getValueAt(fila, 1).toString();
         
-        // Pasamos la orden al Menu para que configure y muestre el PanelDetalleFactura
         menuPrincipal.mostrarDetalleFactura(idFactura, numFactura);
     }
 }

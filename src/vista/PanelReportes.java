@@ -1,5 +1,6 @@
 package vista;
 
+import controlador.Ctrl_Dashboard;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,6 +12,8 @@ public class PanelReportes extends JPanel {
     private Color colorFondo = new Color(255, 255, 255);
     private Color colorAzulPrincipal = new Color(102, 153, 255);
     private Color colorTexto = new Color(50, 50, 50);
+    
+    private DefaultTableModel modeloTabla;
 
     public PanelReportes() {
         this.setBackground(colorFondo);
@@ -18,6 +21,7 @@ public class PanelReportes extends JPanel {
         this.setBorder(new EmptyBorder(20, 30, 20, 30));
 
         inicializarComponentes();
+        cargarReporteVentasDiarias();
     }
 
     private void inicializarComponentes() {
@@ -50,8 +54,7 @@ public class PanelReportes extends JPanel {
         JComboBox<String> cbTipoReporte = new JComboBox<>(new String[]{
             "Ventas Diarias", 
             "Ventas Mensuales", 
-            "Productos Más Vendidos",
-            "Historial Completo"
+            "Productos Más Vendidos"
         });
         cbTipoReporte.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
         
@@ -59,6 +62,17 @@ public class PanelReportes extends JPanel {
         btnGenerar.setBackground(colorAzulPrincipal);
         btnGenerar.setForeground(Color.WHITE);
         btnGenerar.setFocusPainted(false);
+        
+        btnGenerar.addActionListener(e -> {
+            int indice = cbTipoReporte.getSelectedIndex();
+            if (indice == 0) {
+                cargarReporteVentasDiarias();
+            } else if (indice == 1) {
+                cargarReporteVentasMensuales();
+            } else if (indice == 2) {
+                cargarReporteProductosMasVendidos();
+            }
+        });
         
         panelFiltros.add(lblTipo);
         panelFiltros.add(cbTipoReporte);
@@ -75,11 +89,13 @@ public class PanelReportes extends JPanel {
         this.add(panelNorte, BorderLayout.NORTH);
 
         // --- TABLA DE RESULTADOS ---
-        String[] columnas = {"ID FACTURA", "FECHA", "CLIENTE", "TOTAL", "VENDEDOR", "MÉTODO PAGO"};
-        Object[][] datos = new Object[0][0];
+        String[] columnas = {"ID FACTURA", "NÚMERO FACTURA", "FECHA", "CLIENTE", "TOTAL", "VENDEDOR", "MÉTODO PAGO"};
+        modeloTabla = new DefaultTableModel(null, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
 
-        DefaultTableModel modelo = new DefaultTableModel(datos, columnas);
-        JTable tabla = new JTable(modelo);
+        JTable tabla = new JTable(modeloTabla);
         tabla.setBackground(Color.WHITE);
         tabla.setForeground(colorTexto);
         tabla.setRowHeight(40);
@@ -99,5 +115,36 @@ public class PanelReportes extends JPanel {
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
 
         this.add(scrollPane, BorderLayout.CENTER);
+    }
+    
+    private void cargarReporteVentasDiarias() {
+        modeloTabla.setRowCount(0);
+        modeloTabla.setColumnIdentifiers(new String[]{"ID FACTURA", "NÚMERO FACTURA", "FECHA", "CLIENTE", "TOTAL", "VENDEDOR", "MÉTODO PAGO"});
+        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+        
+        for (Object[] fila : ctrl.getReporteVentas("diario")) {
+            modeloTabla.addRow(fila);
+        }
+    }
+    
+    private void cargarReporteVentasMensuales() {
+        modeloTabla.setRowCount(0);
+        modeloTabla.setColumnIdentifiers(new String[]{"ID FACTURA", "NÚMERO FACTURA", "FECHA", "CLIENTE", "TOTAL", "VENDEDOR", "MÉTODO PAGO"});
+        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+        
+        for (Object[] fila : ctrl.getReporteVentas("mensual")) {
+            modeloTabla.addRow(fila);
+        }
+    }
+    
+    private void cargarReporteProductosMasVendidos() {
+        modeloTabla.setRowCount(0);
+        modeloTabla.setColumnIdentifiers(new String[]{"ID PRODUCTO", "NOMBRE", "CANTIDAD VENDIDA", "INGRESO TOTAL"});
+        
+        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+        
+        for (Object[] fila : ctrl.getProductosMasVendidos()) {
+            modeloTabla.addRow(fila);
+        }
     }
 }

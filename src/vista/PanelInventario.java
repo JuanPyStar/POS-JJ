@@ -1,5 +1,6 @@
 package vista;
 
+import controlador.Ctrl_Dashboard;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,6 +12,12 @@ public class PanelInventario extends JPanel {
     private Color colorFondo = new Color(255, 255, 255);
     private Color colorAzulPrincipal = new Color(102, 153, 255);
     private Color colorTexto = new Color(50, 50, 50);
+    
+    private DefaultTableModel modeloTabla;
+    private JButton btnMovimiento;
+    private JButton btnVerTodos;
+    private JButton btnVerEntradas;
+    private JButton btnVerSalidas;
 
     public PanelInventario() {
         this.setBackground(colorFondo);
@@ -18,6 +25,7 @@ public class PanelInventario extends JPanel {
         this.setBorder(new EmptyBorder(20, 30, 20, 30));
 
         inicializarComponentes();
+        cargarDatosTabla(null);
     }
 
     private void inicializarComponentes() {
@@ -29,31 +37,51 @@ public class PanelInventario extends JPanel {
         lblTitulo.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
         lblTitulo.setForeground(colorAzulPrincipal);
         
-        JButton btnMovimiento = new JButton("+ Registrar Movimiento");
+        btnMovimiento = new JButton("+ Registrar Movimiento");
         btnMovimiento.setBackground(new Color(46, 204, 113)); // Verde
         btnMovimiento.setForeground(Color.WHITE);
         btnMovimiento.setFocusPainted(false);
         btnMovimiento.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 16));
         btnMovimiento.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         
+        btnMovimiento.addActionListener(e -> {
+            FrmMovimientoInventario frm = new FrmMovimientoInventario((Frame) SwingUtilities.getWindowAncestor(this));
+            frm.setVisible(true);
+            cargarDatosTabla(null);
+        });
+        
         panelHeader.add(lblTitulo, BorderLayout.WEST);
         panelHeader.add(btnMovimiento, BorderLayout.EAST);
 
         // --- FILTROS ---
-        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         panelFiltros.setBackground(colorFondo);
         panelFiltros.setBorder(new EmptyBorder(20, 0, 20, 0));
         
-        JCheckBox chkStockBajo = new JCheckBox("Solo Stock Bajo");
-        chkStockBajo.setBackground(colorFondo);
-        chkStockBajo.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
-        chkStockBajo.setForeground(new Color(231, 76, 60)); // Rojo
+        btnVerTodos = new JButton("Todos");
+        btnVerTodos.setBackground(colorAzulPrincipal);
+        btnVerTodos.setForeground(Color.WHITE);
+        btnVerTodos.setFocusPainted(false);
+        btnVerTodos.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnVerTodos.addActionListener(e -> cargarDatosTabla(null));
+
+        btnVerEntradas = new JButton("Entradas");
+        btnVerEntradas.setBackground(new Color(46, 204, 113));
+        btnVerEntradas.setForeground(Color.WHITE);
+        btnVerEntradas.setFocusPainted(false);
+        btnVerEntradas.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnVerEntradas.addActionListener(e -> cargarDatosTabla("ENTRADA"));
+
+        btnVerSalidas = new JButton("Salidas");
+        btnVerSalidas.setBackground(new Color(231, 76, 60));
+        btnVerSalidas.setForeground(Color.WHITE);
+        btnVerSalidas.setFocusPainted(false);
+        btnVerSalidas.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnVerSalidas.addActionListener(e -> cargarDatosTabla("SALIDA"));
         
-        JComboBox<String> cbMovimientos = new JComboBox<>(new String[]{"Todos los movimientos", "Entradas", "Salidas"});
-        cbMovimientos.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
-        
-        panelFiltros.add(chkStockBajo);
-        panelFiltros.add(cbMovimientos);
+        panelFiltros.add(btnVerTodos);
+        panelFiltros.add(btnVerEntradas);
+        panelFiltros.add(btnVerSalidas);
 
         // --- PANEL NORTE ---
         JPanel panelNorte = new JPanel();
@@ -66,11 +94,13 @@ public class PanelInventario extends JPanel {
         this.add(panelNorte, BorderLayout.NORTH);
 
         // --- TABLA DE INVENTARIO ---
-        String[] columnas = {"ID", "PRODUCTO", "STOCK ACTUAL", "TIPO MOV.", "CANTIDAD MOV.", "FECHA", "USUARIO"};
-        Object[][] datos = new Object[0][0];
+        String[] columnas = {"ID", "PRODUCTO", "STOCK ACTUAL", "TIPO MOV.", "CANTIDAD MOV.", "FECHA", "TIPO"};
+        modeloTabla = new DefaultTableModel(null, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) { return false; }
+        };
 
-        DefaultTableModel modelo = new DefaultTableModel(datos, columnas);
-        JTable tabla = new JTable(modelo);
+        JTable tabla = new JTable(modeloTabla);
         tabla.setBackground(Color.WHITE);
         tabla.setForeground(colorTexto);
         tabla.setRowHeight(40);
@@ -90,5 +120,18 @@ public class PanelInventario extends JPanel {
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
 
         this.add(scrollPane, BorderLayout.CENTER);
+    }
+    
+    public void cargarDatosTabla() {
+        cargarDatosTabla(null);
+    }
+
+    public void cargarDatosTabla(String tipo) {
+        modeloTabla.setRowCount(0);
+        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+        
+        for (Object[] fila : ctrl.getMovimientosInventario(tipo)) {
+            modeloTabla.addRow(fila);
+        }
     }
 }

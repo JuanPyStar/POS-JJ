@@ -100,9 +100,18 @@ public class PanelResumenVentas extends JPanel {
     private void cargarDatosHoy() {
         Connection cn = conexion.conectar();
         try {
-            String sql = "SELECT SUM(totalPagar) as totalHoy FROM tb_factura WHERE DATE(fechaFactura) = CURDATE() AND idUsuario = ?";
+            String sql = "SELECT SUM(totalPagar) as totalHoy FROM tb_factura WHERE DATE(fechaFactura) = CURDATE()";
+            
+            boolean isAdmin = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador");
+            if (!isAdmin) {
+                sql += " AND idUsuario = ?";
+            }
+            sql += " AND estado = 1";
+            
             PreparedStatement ps = cn.prepareStatement(sql);
-            ps.setInt(1, usuarioLogueado.getIdUsuario());
+            if (!isAdmin) {
+                ps.setInt(1, usuarioLogueado.getIdUsuario());
+            }
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 double total = rs.getDouble("totalHoy");
@@ -121,11 +130,19 @@ public class PanelResumenVentas extends JPanel {
             // Últimos 7 días
             String sql = "SELECT DATE(fechaFactura) as fecha, SUM(totalPagar) as total " +
                          "FROM tb_factura " +
-                         "WHERE idUsuario = ? AND fechaFactura >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) " +
-                         "GROUP BY DATE(fechaFactura) " +
-                         "ORDER BY DATE(fechaFactura) ASC";
+                         "WHERE fechaFactura >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND estado = 1 ";
+            
+            boolean isAdmin = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador");
+            if (!isAdmin) {
+                sql += "AND idUsuario = ? ";
+            }
+            
+            sql += "GROUP BY DATE(fechaFactura) ORDER BY DATE(fechaFactura) ASC";
+            
             PreparedStatement ps = cn.prepareStatement(sql);
-            ps.setInt(1, usuarioLogueado.getIdUsuario());
+            if (!isAdmin) {
+                ps.setInt(1, usuarioLogueado.getIdUsuario());
+            }
             ResultSet rs = ps.executeQuery();
             
             while (rs.next()) {
