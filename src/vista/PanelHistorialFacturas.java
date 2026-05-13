@@ -16,10 +16,10 @@ public class PanelHistorialFacturas extends JPanel {
 
     private Usuario usuarioLogueado;
     private Menu menuPrincipal;
-    
+
     private JTable tablaFacturas;
     private DefaultTableModel modeloFacturas;
-    
+
     private Color colorAzulPrincipal = new Color(102, 153, 255);
     private Color colorFondo = new Color(255, 255, 255);
     private Color colorTexto = new Color(50, 50, 50);
@@ -27,7 +27,7 @@ public class PanelHistorialFacturas extends JPanel {
     public PanelHistorialFacturas(Usuario usuario, Menu menu) {
         this.usuarioLogueado = usuario;
         this.menuPrincipal = menu;
-        
+
         this.setLayout(new BorderLayout(10, 10));
         this.setBackground(colorFondo);
         this.setBorder(new EmptyBorder(20, 30, 20, 30));
@@ -43,31 +43,35 @@ public class PanelHistorialFacturas extends JPanel {
     private void inicializarComponentes() {
         JPanel panelNorte = new JPanel(new BorderLayout());
         panelNorte.setBackground(colorFondo);
-        
-        String titulo = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador") ? "Historial de Facturas" : "Historial de Facturas (Mis Ventas)";
+
+        String titulo = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"))
+                ? "Historial de Facturas"
+                : "Historial de Facturas (Mis Ventas)";
         JLabel lblTitulo = new JLabel(titulo);
         lblTitulo.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
         lblTitulo.setForeground(colorAzulPrincipal);
-        
+
         JLabel lblSubtitulo = new JLabel("Haz doble clic en una factura para ver los detalles");
         lblSubtitulo.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
         lblSubtitulo.setForeground(Color.GRAY);
-        
+
         JPanel panelTextos = new JPanel(new GridLayout(2, 1));
         panelTextos.setBackground(colorFondo);
         panelTextos.add(lblTitulo);
         panelTextos.add(lblSubtitulo);
-        
+
         panelNorte.add(panelTextos, BorderLayout.WEST);
         this.add(panelNorte, BorderLayout.NORTH);
 
         // Tabla
-        String[] columnas = {"ID", "N° FACTURA", "FECHA / HORA", "TOTAL", "MÉTODO PAGO"};
+        String[] columnas = { "ID", "N° FACTURA", "FECHA / HORA", "TOTAL", "MÉTODO PAGO" };
         modeloFacturas = new DefaultTableModel(null, columnas) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
-        
+
         tablaFacturas = new JTable(modeloFacturas);
         tablaFacturas.setBackground(Color.WHITE);
         tablaFacturas.setForeground(colorTexto);
@@ -86,7 +90,7 @@ public class PanelHistorialFacturas extends JPanel {
         JScrollPane scrollPane = new JScrollPane(tablaFacturas);
         scrollPane.getViewport().setBackground(Color.WHITE);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
-        
+
         // Evento de doble clic para abrir detalles en el mismo panel de contenido
         tablaFacturas.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -95,7 +99,7 @@ public class PanelHistorialFacturas extends JPanel {
                 }
             }
         });
-        
+
         JPanel panelCentro = new JPanel(new BorderLayout());
         panelCentro.setBorder(new EmptyBorder(20, 0, 0, 0));
         panelCentro.setBackground(colorFondo);
@@ -110,30 +114,30 @@ public class PanelHistorialFacturas extends JPanel {
         try {
             // Solo facturas del usuario logueado en el día actual
             StringBuilder sql = new StringBuilder(
-                "SELECT f.idFactura, f.numeroFactura, f.fechaFactura, f.totalPagar, p.metodoPago " +
-                "FROM tb_factura f " +
-                "LEFT JOIN tb_pago p ON f.idFactura = p.idFactura " +
-                "WHERE DATE(f.fechaFactura) = CURDATE() "
-            );
+                    "SELECT f.idFactura, f.numeroFactura, f.fechaFactura, f.totalPagar, p.metodoPago " +
+                            "FROM tb_factura f " +
+                            "LEFT JOIN tb_pago p ON f.idFactura = p.idFactura " +
+                            "WHERE DATE(f.fechaFactura) = CURDATE() ");
 
-            boolean isAdmin = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador");
+            boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
                 sql.append("AND f.idUsuario = ? ");
             }
             sql.append("ORDER BY f.idFactura DESC");
-                         
+
             PreparedStatement ps = cn.prepareStatement(sql.toString());
             if (!isAdmin) {
                 ps.setInt(1, usuarioLogueado.getIdUsuario());
             }
             ResultSet rs = ps.executeQuery();
-            
-            while(rs.next()) {
+
+            while (rs.next()) {
                 Object[] fila = new Object[5];
                 fila[0] = rs.getInt("idFactura");
                 fila[1] = rs.getString("numeroFactura");
                 fila[2] = rs.getString("fechaFactura");
-                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("totalPagar"));
+                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f",
+                        rs.getDouble("totalPagar"));
                 fila[4] = rs.getString("metodoPago") != null ? rs.getString("metodoPago") : "N/A";
                 modeloFacturas.addRow(fila);
             }
@@ -145,11 +149,12 @@ public class PanelHistorialFacturas extends JPanel {
 
     private void abrirDetalles() {
         int fila = tablaFacturas.getSelectedRow();
-        if (fila == -1) return;
-        
+        if (fila == -1)
+            return;
+
         int idFactura = (int) tablaFacturas.getValueAt(fila, 0);
         String numFactura = tablaFacturas.getValueAt(fila, 1).toString();
-        
+
         // Pasamos la orden al Menu para que configure y muestre el PanelDetalleFactura
         menuPrincipal.mostrarDetalleFactura(idFactura, numFactura);
     }
