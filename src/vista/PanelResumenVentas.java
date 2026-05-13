@@ -25,7 +25,7 @@ public class PanelResumenVentas extends JPanel {
     private Color colorAzulPrincipal = new Color(102, 153, 255);
     private Color colorFondo = new Color(255, 255, 255);
     private Color colorVerde = new Color(46, 204, 113);
-    
+
     private JLabel lblTotalHoy;
     private ChartPanel chartPanel;
 
@@ -60,11 +60,11 @@ public class PanelResumenVentas extends JPanel {
         lblTotalHoy = new JLabel("Total del día: $ 0");
         lblTotalHoy.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 24));
         lblTotalHoy.setForeground(colorVerde);
-        
+
         JPanel pnlTitulos = new JPanel(new GridLayout(2, 1, 5, 5));
         pnlTitulos.setBackground(colorFondo);
         pnlTitulos.add(lblTitulo);
-        
+
         JLabel lblInstruccion = new JLabel("(Haz clic en la gráfica para ver el detalle de todas las facturas)");
         lblInstruccion.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
         lblInstruccion.setForeground(Color.GRAY);
@@ -72,7 +72,7 @@ public class PanelResumenVentas extends JPanel {
 
         panelNorte.add(pnlTitulos, BorderLayout.WEST);
         panelNorte.add(lblTotalHoy, BorderLayout.EAST);
-        
+
         this.add(panelNorte, BorderLayout.NORTH);
 
         // Panel para la Gráfica
@@ -90,8 +90,7 @@ public class PanelResumenVentas extends JPanel {
         panelCentro.setBackground(colorFondo);
         panelCentro.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),
-                "Ventas de los últimos 7 días"
-        ));
+                "Ventas de los últimos 7 días"));
         panelCentro.add(chartPanel, BorderLayout.CENTER);
 
         this.add(panelCentro, BorderLayout.CENTER);
@@ -100,14 +99,13 @@ public class PanelResumenVentas extends JPanel {
     private void cargarDatosHoy() {
         Connection cn = conexion.conectar();
         try {
-            String sql = "SELECT SUM(totalPagar) as totalHoy FROM tb_factura WHERE DATE(fechaFactura) = CURDATE()";
-            
-            boolean isAdmin = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador");
+            String sql = "SELECT SUM(totalPagar) as totalHoy FROM tb_factura WHERE estado = 1";
+
+            boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
                 sql += " AND idUsuario = ?";
             }
-            sql += " AND estado = 1";
-            
+
             PreparedStatement ps = cn.prepareStatement(sql);
             if (!isAdmin) {
                 ps.setInt(1, usuarioLogueado.getIdUsuario());
@@ -115,7 +113,8 @@ public class PanelResumenVentas extends JPanel {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 double total = rs.getDouble("totalHoy");
-                lblTotalHoy.setText("Total del día: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", total));
+                lblTotalHoy.setText(
+                        "Total Ventas: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", total));
             }
             cn.close();
         } catch (SQLException e) {
@@ -127,30 +126,31 @@ public class PanelResumenVentas extends JPanel {
         datosGrafica.clear();
         Connection cn = conexion.conectar();
         try {
-            // Últimos 7 días
+            // Últimos 7 días con ventas registradas
             String sql = "SELECT DATE(fechaFactura) as fecha, SUM(totalPagar) as total " +
                          "FROM tb_factura " +
-                         "WHERE fechaFactura >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND estado = 1 ";
-            
-            boolean isAdmin = usuarioLogueado.getRol() != null && usuarioLogueado.getRol().equalsIgnoreCase("Administrador");
+                         "WHERE estado = 1 ";
+
+            boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
                 sql += "AND idUsuario = ? ";
             }
-            
-            sql += "GROUP BY DATE(fechaFactura) ORDER BY DATE(fechaFactura) ASC";
-            
+
+            sql += "GROUP BY DATE(fechaFactura) ORDER BY DATE(fechaFactura) DESC LIMIT 7";
+
             PreparedStatement ps = cn.prepareStatement(sql);
             if (!isAdmin) {
                 ps.setInt(1, usuarioLogueado.getIdUsuario());
             }
             ResultSet rs = ps.executeQuery();
-            
+
             while (rs.next()) {
                 datosGrafica.add(new VentaDia(rs.getString("fecha"), rs.getDouble("total")));
             }
             cn.close();
-            
-            // Si faltan días, la gráfica se adaptará a los días con ventas.
+
+            // Invertir la lista para que la fecha más antigua quede a la izquierda
+            Collections.reverse(datosGrafica);
         } catch (SQLException e) {
             System.out.println("Error Gráfica: " + e);
         }
@@ -160,6 +160,7 @@ public class PanelResumenVentas extends JPanel {
     private class VentaDia {
         String fecha;
         double total;
+
         VentaDia(String fecha, double total) {
             this.fecha = fecha;
             this.total = total;
@@ -177,7 +178,7 @@ public class PanelResumenVentas extends JPanel {
             int width = getWidth();
             int height = getHeight();
             int padding = 50;
-            
+
             // Fondo
             g2.setColor(Color.WHITE);
             g2.fillRect(0, 0, width, height);
@@ -185,16 +186,18 @@ public class PanelResumenVentas extends JPanel {
             if (datosGrafica.isEmpty()) {
                 g2.setColor(Color.GRAY);
                 g2.setFont(new Font("Yu Gothic UI", Font.PLAIN, 18));
-                g2.drawString("No hay datos de ventas recientes", width/2 - 100, height/2);
+                g2.drawString("No hay datos de ventas recientes", width / 2 - 100, height / 2);
                 return;
             }
 
             // Calcular el máximo
             double maxVal = 0;
             for (VentaDia v : datosGrafica) {
-                if (v.total > maxVal) maxVal = v.total;
+                if (v.total > maxVal)
+                    maxVal = v.total;
             }
-            if (maxVal == 0) maxVal = 10000; // Evitar división por cero
+            if (maxVal == 0)
+                maxVal = 10000; // Evitar división por cero
 
             // Dibujar ejes
             g2.setColor(Color.LIGHT_GRAY);
@@ -203,8 +206,10 @@ public class PanelResumenVentas extends JPanel {
 
             // Dibujar barras
             int barWidth = (width - 2 * padding) / datosGrafica.size() - 20;
-            if (barWidth < 20) barWidth = 20;
-            if (barWidth > 80) barWidth = 80;
+            if (barWidth < 20)
+                barWidth = 20;
+            if (barWidth > 80)
+                barWidth = 80;
 
             int x = padding + 20;
             g2.setFont(new Font("Yu Gothic UI", Font.PLAIN, 12));
