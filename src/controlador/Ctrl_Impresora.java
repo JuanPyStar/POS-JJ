@@ -73,38 +73,35 @@ public class Ctrl_Impresora {
                 }
             }
             
-            // 3. Generar Ticket de Texto Plano (48 columnas para 80mm)
+            // 3. Generar Ticket de Texto Plano (32 columnas adaptable)
             StringBuilder ticket = new StringBuilder();
             
-            ticket.append(repetir("=", 48)).append("\n");
-            ticket.append(centrar(empNombre, 48)).append("\n");
-            ticket.append(centrar("SISTEMA DE VENTAS", 48)).append("\n");
-            ticket.append(repetir("=", 48)).append("\n\n");
+            ticket.append(repetir("=", 32)).append("\n");
+            ticket.append(centrar(empNombre, 32)).append("\n");
+            ticket.append(centrar("SISTEMA DE VENTAS", 32)).append("\n");
+            ticket.append(repetir("=", 32)).append("\n\n");
             
             ticket.append("NIT: ").append(empNit).append("\n");
-            ticket.append("Dirección: ").append(empDir).append("\n");
-            ticket.append("Teléfono: ").append(empTel).append("\n\n");
+            ticket.append("DIR: ").append(empDir).append("\n");
+            ticket.append("TEL: ").append(empTel).append("\n\n");
             
-            ticket.append(repetir("-", 48)).append("\n");
-            ticket.append("FACTURA DE VENTA N° ").append(numFactura).append("\n");
-            ticket.append("Fecha: ").append(fecha).append("\n");
-            ticket.append("Hora: ").append(hora).append("\n");
-            ticket.append(repetir("-", 48)).append("\n\n");
+            ticket.append(repetir("-", 32)).append("\n");
+            ticket.append("FACTURA N° ").append(numFactura).append("\n");
+            ticket.append("FECHA: ").append(fecha).append(" ").append(hora).append("\n");
+            ticket.append(repetir("-", 32)).append("\n\n");
             
-            ticket.append("DATOS DEL CLIENTE\n");
-            ticket.append("Cliente: ").append(cliNombre).append("\n");
-            ticket.append("Documento: ").append(cliDoc).append("\n\n");
+            ticket.append("CLIENTE: ").append(cliNombre).append("\n");
+            ticket.append("DOC: ").append(cliDoc).append("\n\n");
             
-            ticket.append(repetir("-", 48)).append("\n");
-            ticket.append(centrar("DESCRIPCIÓN DE PRODUCTOS", 48)).append("\n");
-            ticket.append(repetir("-", 48)).append("\n");
+            ticket.append(repetir("-", 32)).append("\n");
+            ticket.append(centrar("PRODUCTOS", 32)).append("\n");
+            ticket.append(repetir("-", 32)).append("\n");
             
-            // Cabecera: Producto (22), Cant (4), Precio (10), Total (10) + 2 espacios = 48
-            ticket.append(alinearIzq("Producto", 22)).append(" ")
-                  .append(alinearDer("Cant", 4)).append(" ")
-                  .append(alinearDer("Precio", 10)).append(" ")
-                  .append(alinearDer("Total", 10)).append("\n");
-            ticket.append(repetir("-", 48)).append("\n");
+            ticket.append(alinearIzq("ARTICULO", 11)).append(" ")
+                  .append(alinearDer("C.", 2)).append(" ")
+                  .append(alinearDer("PRECIO", 8)).append(" ")
+                  .append(alinearDer("TOTAL", 8)).append("\n");
+            ticket.append(repetir("-", 32)).append("\n");
             
             String sqlDetalles = "SELECT p.nombre, d.cantidad, d.precioUnitario, d.subtotal, d.descuento " +
                                  "FROM tb_detalle_factura d " +
@@ -123,34 +120,34 @@ public class Ctrl_Impresora {
                 double subT = rs2.getDouble("subtotal");
                 totalDescuento += rs2.getDouble("descuento");
                 
-                if (nom.length() > 22) nom = nom.substring(0, 19) + "...";
+                if (nom.length() > 11) nom = nom.substring(0, 10) + ".";
                 
                 String strCant = String.valueOf(cant);
-                String strPrecio = formatoMoneda(precioU);
-                String strSub = formatoMoneda(subT);
+                String strPrecio = formatoMoneda(precioU).replace(" ", "");
+                String strSub = formatoMoneda(subT).replace(" ", "");
                 
-                ticket.append(alinearIzq(nom, 22)).append(" ")
-                      .append(alinearDer(strCant, 4)).append(" ")
-                      .append(alinearDer(strPrecio, 10)).append(" ")
-                      .append(alinearDer(strSub, 10)).append("\n");
+                ticket.append(alinearIzq(nom, 11)).append(" ")
+                      .append(alinearDer(strCant, 2)).append(" ")
+                      .append(alinearDer(strPrecio, 8)).append(" ")
+                      .append(alinearDer(strSub, 8)).append("\n");
             }
-            ticket.append(repetir("-", 48)).append("\n\n");
+            ticket.append(repetir("-", 32)).append("\n\n");
             
-            ticket.append(alinearIzq("Subtotal:", 25)).append(alinearDer(formatoMoneda(subtotal), 23)).append("\n");
-            ticket.append(alinearIzq("Descuento:", 25)).append(alinearDer(formatoMoneda(totalDescuento), 23)).append("\n");
-            ticket.append(alinearIzq("IVA:", 25)).append(alinearDer(formatoMoneda(iva), 23)).append("\n");
-            ticket.append(repetir("-", 48)).append("\n");
-            ticket.append(alinearIzq("TOTAL A PAGAR:", 25)).append(alinearDer(formatoMoneda(total), 23)).append("\n");
-            ticket.append(repetir("-", 48)).append("\n\n");
+            ticket.append(alinearIzq("Subtotal:", 14)).append(alinearDer(formatoMoneda(subtotal), 18)).append("\n");
+            ticket.append(alinearIzq("Descuento:", 14)).append(alinearDer(formatoMoneda(totalDescuento), 18)).append("\n");
+            ticket.append(alinearIzq("IVA:", 14)).append(alinearDer(formatoMoneda(iva), 18)).append("\n");
+            ticket.append(repetir("-", 32)).append("\n");
+            ticket.append(alinearIzq("TOTAL A PAGAR:", 14)).append(alinearDer(formatoMoneda(total), 18)).append("\n");
+            ticket.append(repetir("-", 32)).append("\n\n");
             
-            ticket.append("Método de pago: ").append(metodoPago).append("\n");
-            ticket.append(alinearIzq("Recibido:", 25)).append(alinearDer(formatoMoneda(valorPagado), 23)).append("\n");
-            ticket.append(alinearIzq("Cambio:", 25)).append(alinearDer(formatoMoneda(valorPagado - total), 23)).append("\n\n");
+            ticket.append("Medio: ").append(metodoPago).append("\n");
+            ticket.append(alinearIzq("Recibido:", 14)).append(alinearDer(formatoMoneda(valorPagado), 18)).append("\n");
+            ticket.append(alinearIzq("Cambio:", 14)).append(alinearDer(formatoMoneda(valorPagado - total), 18)).append("\n\n");
             
-            ticket.append(repetir("=", 48)).append("\n");
-            ticket.append(centrar(empMensaje, 48)).append("\n");
-            ticket.append(centrar("Vuelva pronto a POS JJ", 48)).append("\n");
-            ticket.append(repetir("=", 48)).append("\n");
+            ticket.append(repetir("=", 32)).append("\n");
+            ticket.append(centrar(empMensaje, 32)).append("\n");
+            ticket.append(centrar("Vuelva pronto", 32)).append("\n");
+            ticket.append(repetir("=", 32)).append("\n");
             
             // Fin de papel
             ticket.append("\n\n\n\n\n\n");
@@ -158,16 +155,12 @@ public class Ctrl_Impresora {
             cn.close();
             
             // 4. Mandar a imprimir sin preguntar
-            java.net.URL urlLogo = Ctrl_Impresora.class.getResource("/img/posjj-removebg-preview.png");
-            String imgTag = "";
-            if (urlLogo != null) {
-                imgTag = "<div style='text-align: center;'><img src='" + urlLogo.toString() + "' width='100'></div><br>";
-            }
+            String imgTag = ""; // Logo retirado
             
             String ticketHtml = ticket.toString().replace(" ", "&nbsp;").replace("\n", "<br>");
             String htmlContent = "<html><body style='margin: 0; padding: 0;'>" + 
                                  imgTag + 
-                                 "<div style='font-family: monospace; font-size: 10px; width: 250px;'>" + 
+                                 "<div style='font-family: monospace; font-size: 8px; width: 170px;'>" + 
                                  ticketHtml + 
                                  "</div></body></html>";
                                  
