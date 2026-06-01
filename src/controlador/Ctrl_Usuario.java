@@ -90,13 +90,14 @@ public class Ctrl_Usuario {
         List<Object[]> lista = new ArrayList<>();
         Connection cn = conexion.conectar();
         try {
-            String sql = "SELECT idUsuario, nombre, apellido, usuario, telefono, rol, estado " +
-                        "FROM tb_usuario WHERE estado = 1 ORDER BY nombre ASC";
+            String sql = "SELECT u.idUsuario, u.nombre, u.apellido, u.usuario, u.telefono, u.rol, u.estado, " +
+                         "(SELECT t.estado FROM tb_turno t WHERE t.idUsuario = u.idUsuario ORDER BY t.idTurno DESC LIMIT 1) as estadoTurno " +
+                         "FROM tb_usuario u WHERE u.estado = 1 ORDER BY u.nombre ASC";
             PreparedStatement ps = cn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                Object[] fila = new Object[7];
+                Object[] fila = new Object[8];
                 fila[0] = rs.getInt("idUsuario");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getString("apellido");
@@ -104,6 +105,16 @@ public class Ctrl_Usuario {
                 fila[4] = rs.getString("telefono");
                 fila[5] = rs.getString("rol");
                 fila[6] = rs.getInt("estado") == 1 ? "Activo" : "Inactivo";
+                
+                Object estadoTurno = rs.getObject("estadoTurno");
+                if (estadoTurno == null) {
+                    fila[7] = "Sin Turno";
+                } else if (rs.getInt("estadoTurno") == 1) {
+                    fila[7] = "Turno Abierto";
+                } else {
+                    fila[7] = "Turno Cerrado";
+                }
+                
                 lista.add(fila);
             }
             cn.close();
@@ -120,13 +131,14 @@ public class Ctrl_Usuario {
         List<Object[]> lista = new ArrayList<>();
         Connection cn = conexion.conectar();
         try {
-            String sql = "SELECT idUsuario, nombre, apellido, usuario, telefono, rol, estado " +
-                        "FROM tb_usuario ORDER BY nombre ASC";
+            String sql = "SELECT u.idUsuario, u.nombre, u.apellido, u.usuario, u.telefono, u.rol, u.estado, " +
+                         "(SELECT t.estado FROM tb_turno t WHERE t.idUsuario = u.idUsuario ORDER BY t.idTurno DESC LIMIT 1) as estadoTurno " +
+                         "FROM tb_usuario u ORDER BY u.nombre ASC";
             PreparedStatement ps = cn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                Object[] fila = new Object[7];
+                Object[] fila = new Object[8];
                 fila[0] = rs.getInt("idUsuario");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getString("apellido");
@@ -134,6 +146,16 @@ public class Ctrl_Usuario {
                 fila[4] = rs.getString("telefono");
                 fila[5] = rs.getString("rol");
                 fila[6] = rs.getInt("estado") == 1 ? "Activo" : "Inactivo";
+                
+                Object estadoTurno = rs.getObject("estadoTurno");
+                if (estadoTurno == null) {
+                    fila[7] = "Sin Turno";
+                } else if (rs.getInt("estadoTurno") == 1) {
+                    fila[7] = "Turno Abierto";
+                } else {
+                    fila[7] = "Turno Cerrado";
+                }
+                
                 lista.add(fila);
             }
             cn.close();
@@ -168,10 +190,11 @@ public class Ctrl_Usuario {
         List<Object[]> lista = new ArrayList<>();
         Connection cn = conexion.conectar();
         try {
-            String sql = "SELECT idUsuario, nombre, apellido, usuario, telefono, rol, estado " +
-                         "FROM tb_usuario WHERE " +
-                         "(nombre LIKE ? OR apellido LIKE ? OR usuario LIKE ? OR rol LIKE ?) " +
-                         "ORDER BY nombre ASC";
+            String sql = "SELECT u.idUsuario, u.nombre, u.apellido, u.usuario, u.telefono, u.rol, u.estado, " +
+                         "(SELECT t.estado FROM tb_turno t WHERE t.idUsuario = u.idUsuario ORDER BY t.idTurno DESC LIMIT 1) as estadoTurno " +
+                         "FROM tb_usuario u WHERE " +
+                         "(u.nombre LIKE ? OR u.apellido LIKE ? OR u.usuario LIKE ? OR u.rol LIKE ?) " +
+                         "ORDER BY u.nombre ASC";
             PreparedStatement ps = cn.prepareStatement(sql);
             String valor = "%" + (filtro != null ? filtro.trim() : "") + "%";
             ps.setString(1, valor);
@@ -181,7 +204,7 @@ public class Ctrl_Usuario {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                Object[] fila = new Object[7];
+                Object[] fila = new Object[8];
                 fila[0] = rs.getInt("idUsuario");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getString("apellido");
@@ -189,6 +212,16 @@ public class Ctrl_Usuario {
                 fila[4] = rs.getString("telefono");
                 fila[5] = rs.getString("rol");
                 fila[6] = rs.getInt("estado") == 1 ? "Activo" : "Inactivo";
+                
+                Object estadoTurno = rs.getObject("estadoTurno");
+                if (estadoTurno == null) {
+                    fila[7] = "Sin Turno";
+                } else if (rs.getInt("estadoTurno") == 1) {
+                    fila[7] = "Turno Abierto";
+                } else {
+                    fila[7] = "Turno Cerrado";
+                }
+                
                 lista.add(fila);
             }
             cn.close();

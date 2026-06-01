@@ -86,7 +86,7 @@ public class PanelUsuarios extends JPanel {
         this.add(panelNorte, BorderLayout.NORTH);
 
         // --- TABLA DE USUARIOS ---
-        String[] columnas = {"ID", "NOMBRE", "APELLIDO", "USUARIO", "TELÉFONO", "ROL", "ESTADO"};
+        String[] columnas = {"ID", "NOMBRE", "APELLIDO", "USUARIO", "TELÉFONO", "ROL", "ESTADO", "ESTADO TURNO"};
         modeloTabla = new DefaultTableModel(null, columnas) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }

@@ -32,10 +32,14 @@ public class Ctrl_Factura {
                 psInsertCliente.executeUpdate();
             }
             
-            // 1. Guardar la Factura
+            // 1. Guardar la Factura (Agregando idTurno si hay uno activo)
+            controlador.Ctrl_Turno ctrlTurno = new controlador.Ctrl_Turno();
+            modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
+            Integer idTurno = (turnoActivo != null) ? turnoActivo.getIdTurno() : null;
+
             PreparedStatement psFactura = cn.prepareStatement(
-                "INSERT INTO tb_factura (numeroFactura, idCliente, idUsuario, subtotal, totalIva, totalPagar, fechaFactura, estado) " +
-                "VALUES (?, 1, ?, ?, ?, ?, NOW(), ?)",
+                "INSERT INTO tb_factura (numeroFactura, idCliente, idUsuario, subtotal, totalIva, totalPagar, fechaFactura, estado, idTurno) " +
+                "VALUES (?, 1, ?, ?, ?, ?, NOW(), ?, ?)",
                 Statement.RETURN_GENERATED_KEYS
             );
             
@@ -45,6 +49,11 @@ public class Ctrl_Factura {
             psFactura.setDouble(4, factura.getTotalIva());
             psFactura.setDouble(5, factura.getTotalPagar());
             psFactura.setInt(6, 1); // Estado activo
+            if (idTurno != null) {
+                psFactura.setInt(7, idTurno);
+            } else {
+                psFactura.setNull(7, java.sql.Types.INTEGER);
+            }
             
             psFactura.executeUpdate();
             

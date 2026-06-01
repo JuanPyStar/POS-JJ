@@ -44,6 +44,20 @@ public class PanelHistorialFacturas extends JPanel {
         JPanel panelNorte = new JPanel(new BorderLayout());
         panelNorte.setBackground(colorFondo);
 
+        // Botón Volver
+        JButton btnVolver = new JButton("← Volver al Resumen de Ventas");
+        btnVolver.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnVolver.setForeground(colorAzulPrincipal);
+        btnVolver.setBackground(colorFondo);
+        btnVolver.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        btnVolver.setFocusPainted(false);
+        btnVolver.setContentAreaFilled(false);
+        btnVolver.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        btnVolver.addActionListener(e -> {
+            menuPrincipal.navegarA("ResumenVentas");
+        });
+
         String titulo = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"))
                 ? "Historial de Facturas"
                 : "Historial de Facturas (Mis Ventas)";
@@ -55,8 +69,9 @@ public class PanelHistorialFacturas extends JPanel {
         lblSubtitulo.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
         lblSubtitulo.setForeground(Color.GRAY);
 
-        JPanel panelTextos = new JPanel(new GridLayout(2, 1));
+        JPanel panelTextos = new JPanel(new GridLayout(3, 1));
         panelTextos.setBackground(colorFondo);
+        panelTextos.add(btnVolver);
         panelTextos.add(lblTitulo);
         panelTextos.add(lblSubtitulo);
 
@@ -111,13 +126,21 @@ public class PanelHistorialFacturas extends JPanel {
     private void cargarHistorial() {
         modeloFacturas.setRowCount(0);
         Connection cn = conexion.conectar();
+        controlador.Ctrl_Turno ctrlTurno = new controlador.Ctrl_Turno();
+        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
         try {
-            // Solo facturas del usuario logueado en el día actual
+            // Solo facturas del turno activo, o del día si no hay turno
             StringBuilder sql = new StringBuilder(
                     "SELECT f.idFactura, f.numeroFactura, f.fechaFactura, f.totalPagar, p.metodoPago " +
                             "FROM tb_factura f " +
                             "LEFT JOIN tb_pago p ON f.idFactura = p.idFactura " +
-                            "WHERE DATE(f.fechaFactura) = CURDATE() ");
+                            "WHERE 1=1 ");
+
+            if (turnoActivo != null) {
+                sql.append("AND f.idTurno = ").append(turnoActivo.getIdTurno()).append(" ");
+            } else {
+                sql.append("AND DATE(f.fechaFactura) = CURDATE() ");
+            }
 
             boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
