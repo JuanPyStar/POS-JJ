@@ -133,7 +133,7 @@ public class Ctrl_Usuario {
         try {
             String sql = "SELECT u.idUsuario, u.nombre, u.apellido, u.usuario, u.telefono, u.rol, u.estado, " +
                          "(SELECT t.estado FROM tb_turno t WHERE t.idUsuario = u.idUsuario ORDER BY t.idTurno DESC LIMIT 1) as estadoTurno " +
-                         "FROM tb_usuario u ORDER BY u.nombre ASC";
+                         "FROM tb_usuario u WHERE u.rol != 'Administrador' AND u.rol != 'Admin' ORDER BY u.nombre ASC";
             PreparedStatement ps = cn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
@@ -192,7 +192,7 @@ public class Ctrl_Usuario {
         try {
             String sql = "SELECT u.idUsuario, u.nombre, u.apellido, u.usuario, u.telefono, u.rol, u.estado, " +
                          "(SELECT t.estado FROM tb_turno t WHERE t.idUsuario = u.idUsuario ORDER BY t.idTurno DESC LIMIT 1) as estadoTurno " +
-                         "FROM tb_usuario u WHERE " +
+                         "FROM tb_usuario u WHERE u.rol != 'Administrador' AND u.rol != 'Admin' AND " +
                          "(u.nombre LIKE ? OR u.apellido LIKE ? OR u.usuario LIKE ? OR u.rol LIKE ?) " +
                          "ORDER BY u.nombre ASC";
             PreparedStatement ps = cn.prepareStatement(sql);
@@ -229,5 +229,56 @@ public class Ctrl_Usuario {
             System.out.println("Error al buscar usuarios: " + e);
         }
         return lista;
+    }
+
+    public Usuario obtenerUsuario(int idUsuario) {
+        Usuario u = null;
+        Connection cn = conexion.conectar();
+        try {
+            PreparedStatement ps = cn.prepareStatement("SELECT * FROM tb_usuario WHERE idUsuario = ?");
+            ps.setInt(1, idUsuario);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                u = new Usuario();
+                u.setIdUsuario(rs.getInt("idUsuario"));
+                u.setNombre(rs.getString("nombre"));
+                u.setApellido(rs.getString("apellido"));
+                u.setUsuario(rs.getString("usuario"));
+                u.setPassword(rs.getString("password"));
+                u.setTelefono(rs.getString("telefono"));
+                u.setRol(rs.getString("rol"));
+                u.setEstado(rs.getInt("estado"));
+            }
+            cn.close();
+        } catch (SQLException e) {
+            System.out.println("Error en obtenerUsuario: " + e);
+        }
+        return u;
+    }
+
+    public boolean actualizar(Usuario objeto) {
+        boolean respuesta = false;
+        Connection cn = conexion.conectar();
+        try {
+            PreparedStatement consulta = cn.prepareStatement(
+                "UPDATE tb_usuario SET nombre=?, apellido=?, usuario=?, password=?, telefono=?, rol=?, estado=? WHERE idUsuario=?"
+            );
+            consulta.setString(1, objeto.getNombre());
+            consulta.setString(2, objeto.getApellido());
+            consulta.setString(3, objeto.getUsuario());
+            consulta.setString(4, objeto.getPassword());
+            consulta.setString(5, objeto.getTelefono());
+            consulta.setString(6, objeto.getRol());
+            consulta.setInt(7, objeto.getEstado());
+            consulta.setInt(8, objeto.getIdUsuario());
+
+            if (consulta.executeUpdate() > 0) {
+                respuesta = true;
+            }
+            cn.close();
+        } catch (SQLException e) {
+            System.out.println("Error al actualizar usuario: " + e);
+        }
+        return respuesta;
     }
 }

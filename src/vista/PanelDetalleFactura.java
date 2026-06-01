@@ -118,7 +118,7 @@ public class PanelDetalleFactura extends JPanel {
         btnImprimir.setFocusPainted(false);
         
         btnImprimir.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Generando e imprimiendo el Ticket de la factura " + numFactura + "...");
+            controlador.Ctrl_Impresora.imprimirFactura(idFactura);
         });
         
         panelSur.add(btnImprimir);

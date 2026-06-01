@@ -32,14 +32,14 @@ public class FrmTurno extends javax.swing.JDialog {
             
             // calcular ventas
             double ventas = ctrlTurno.calcularVentasTurno(turnoActivo.getIdTurno());
-            lblVentas.setText("Ventas del turno: $" + String.format("%.2f", ventas));
+            lblVentas.setText("Ventas del turno: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", ventas));
         } else {
             lblEstado.setText("Sin turno activo");
             txtBase.setText("0");
             txtBase.setEnabled(true);
             btnAbrir.setEnabled(true);
             btnCerrar.setEnabled(false);
-            lblVentas.setText("Ventas del turno: $0.00");
+            lblVentas.setText("Ventas del turno: $ 0");
         }
     }
 
@@ -69,6 +69,19 @@ public class FrmTurno extends javax.swing.JDialog {
         jLabel2.setText("Base Inicial:");
         getContentPane().add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 110, -1, -1));
         getContentPane().add(txtBase, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 106, 150, 30));
+        
+        // Agregar auto-formato al campo de base inicial
+        txtBase.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                String textoPuro = txtBase.getText().replaceAll("[^0-9]", "");
+                if (!textoPuro.isEmpty()) {
+                    try {
+                        double valor = Double.parseDouble(textoPuro);
+                        txtBase.setText(String.format(java.util.Locale.forLanguageTag("es-CO"), "%,.0f", valor));
+                    } catch (Exception ex) {}
+                }
+            }
+        });
 
         btnAbrir.setBackground(new java.awt.Color(0, 153, 51));
         btnAbrir.setForeground(new java.awt.Color(255, 255, 255));
@@ -103,8 +116,8 @@ public class FrmTurno extends javax.swing.JDialog {
             return;
         }
         try {
-            // Eliminar comas o puntos de los miles antes de convertir a double
-            String textoBase = txtBase.getText().replace(".", "").replace(",", "");
+            // Eliminar cualquier caracter no numérico para la base
+            String textoBase = txtBase.getText().replaceAll("[^0-9]", "");
             double base = Double.parseDouble(textoBase);
             Turno t = new Turno();
             t.setIdUsuario(this.idUsuarioActual); 
@@ -124,7 +137,8 @@ public class FrmTurno extends javax.swing.JDialog {
     private void btnCerrarActionPerformed(java.awt.event.ActionEvent evt) {
         if (turnoActivo != null) {
             double ventas = ctrlTurno.calcularVentasTurno(turnoActivo.getIdTurno());
-            int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de cerrar el turno?\nVentas totales: $" + ventas, "Cerrar Turno", JOptionPane.YES_NO_OPTION);
+            String ventasTxt = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", ventas);
+            int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de cerrar el turno?\nVentas totales: " + ventasTxt, "Cerrar Turno", JOptionPane.YES_NO_OPTION);
             
             if (confirm == JOptionPane.YES_OPTION) {
                 if (ctrlTurno.cerrarTurno(turnoActivo.getIdTurno(), ventas)) {

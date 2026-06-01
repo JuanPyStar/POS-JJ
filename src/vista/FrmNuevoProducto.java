@@ -44,6 +44,20 @@ public class FrmNuevoProducto extends JDialog {
         txtNombre = crearCampoTexto();
         txtCantidad = crearCampoTexto();
         txtPrecio = crearCampoTexto();
+        
+        // Auto-formato en tiempo real para el Precio
+        txtPrecio.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                String textoPuro = txtPrecio.getText().replaceAll("[^0-9]", "");
+                if (!textoPuro.isEmpty()) {
+                    try {
+                        double valor = Double.parseDouble(textoPuro);
+                        txtPrecio.setText(String.format(java.util.Locale.forLanguageTag("es-CO"), "%,.0f", valor));
+                    } catch (Exception ex) {}
+                }
+            }
+        });
+        
         txtDescripcion = crearCampoTexto();
         txtIva = crearCampoTexto();
         txtIva.setText("19"); // Default IVA
@@ -125,7 +139,7 @@ public class FrmNuevoProducto extends JDialog {
         if (productoEditar == null) return;
         txtNombre.setText(productoEditar.getNombre());
         txtCantidad.setText(String.valueOf(productoEditar.getCantidad()));
-        txtPrecio.setText(String.valueOf(productoEditar.getPrecio()));
+        txtPrecio.setText(String.format(java.util.Locale.forLanguageTag("es-CO"), "%,.0f", productoEditar.getPrecio()));
         txtDescripcion.setText(productoEditar.getDescripcion());
         txtIva.setText(String.valueOf(productoEditar.getPorcentajeIva()));
 
@@ -169,7 +183,8 @@ public class FrmNuevoProducto extends JDialog {
             Producto p = new Producto();
             p.setNombre(txtNombre.getText().trim());
             p.setCantidad(Integer.parseInt(txtCantidad.getText().trim()));
-            p.setPrecio(Double.parseDouble(txtPrecio.getText().trim()));
+            String precioPuro = txtPrecio.getText().replaceAll("[^0-9]", "");
+            p.setPrecio(Double.parseDouble(precioPuro));
             p.setDescripcion(txtDescripcion.getText().trim());
             p.setPorcentajeIva(Integer.parseInt(txtIva.getText().trim()));
             

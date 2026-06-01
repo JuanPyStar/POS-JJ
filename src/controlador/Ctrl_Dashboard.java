@@ -144,26 +144,39 @@ public class Ctrl_Dashboard {
      * Obtiene los movimientos de inventario con detalles de producto
      */
     public List<Object[]> getMovimientosInventario() {
-        return getMovimientosInventario(null);
+        return getMovimientosInventario(null, null, null);
     }
 
-    public List<Object[]> getMovimientosInventario(String tipo) {
+    public List<Object[]> getMovimientosInventario(String tipo, String busquedaProducto, String fecha) {
         List<Object[]> movimientos = new ArrayList<>();
         Connection cn = conexion.conectar();
         try {
             StringBuilder sql = new StringBuilder(
                 "SELECT m.idMovimiento, p.nombre, p.cantidad, m.tipoMovimiento, m.cantidad as cantMovimiento, " +
                 "m.fechaMovimiento FROM tb_movimiento_inventario m " +
-                "JOIN tb_producto p ON m.idProducto = p.idProducto "
+                "JOIN tb_producto p ON m.idProducto = p.idProducto WHERE 1=1 "
             );
             if (tipo != null && !tipo.isEmpty()) {
-                sql.append("WHERE m.tipoMovimiento = ? ");
+                sql.append("AND m.tipoMovimiento = ? ");
+            }
+            if (busquedaProducto != null && !busquedaProducto.trim().isEmpty()) {
+                sql.append("AND p.nombre LIKE ? ");
+            }
+            if (fecha != null && !fecha.isEmpty() && !fecha.equals("Todas las fechas")) {
+                sql.append("AND DATE(m.fechaMovimiento) = ? ");
             }
             sql.append("ORDER BY m.fechaMovimiento DESC LIMIT 100");
 
             PreparedStatement ps = cn.prepareStatement(sql.toString());
+            int index = 1;
             if (tipo != null && !tipo.isEmpty()) {
-                ps.setString(1, tipo);
+                ps.setString(index++, tipo);
+            }
+            if (busquedaProducto != null && !busquedaProducto.trim().isEmpty()) {
+                ps.setString(index++, "%" + busquedaProducto.trim() + "%");
+            }
+            if (fecha != null && !fecha.isEmpty() && !fecha.equals("Todas las fechas")) {
+                ps.setString(index++, fecha);
             }
             ResultSet rs = ps.executeQuery();
 
@@ -228,7 +241,10 @@ public class Ctrl_Dashboard {
             }
         } finally {
             try {
-                if (cn != null) cn.close();
+                if (cn != null) {
+                    cn.setAutoCommit(true);
+                    cn.close();
+                }
             } catch (SQLException e) {
                 System.out.println("Error al cerrar conexión: " + e);
             }
@@ -273,8 +289,8 @@ public class Ctrl_Dashboard {
                 fila[0] = rs.getInt("idFactura");
                 fila[1] = rs.getString("numeroFactura");
                 fila[2] = rs.getString("fechaFactura");
-                fila[3] = "$ " + String.format("%.2f", rs.getDouble("totalPagar"));
-                fila[4] = rs.getString("nombre") != null ? rs.getString("nombre") : "Consumidor Final";
+                fila[3] = rs.getString("nombre") != null ? rs.getString("nombre") : "Consumidor Final"; // CLIENTE
+                fila[4] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("totalPagar")); // TOTAL
                 fila[5] = rs.getString("vendedor");
                 fila[6] = rs.getString("metodoPago") != null ? rs.getString("metodoPago") : "N/A";
                 reportes.add(fila);
@@ -339,7 +355,7 @@ public class Ctrl_Dashboard {
                 fila[0] = rs.getInt("idProducto");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getInt("totalVendido");
-                fila[3] = "$ " + String.format("%.2f", rs.getDouble("ingresoTotal"));
+                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("ingresoTotal"));
                 productos.add(fila);
             }
             cn.close();
@@ -347,5 +363,94 @@ public class Ctrl_Dashboard {
             System.out.println("Error en getProductosMasVendidos: " + e);
         }
         return productos;
+    }
+
+    public List<Object[]> getReporteVentasMetodoPago() {
+        List<Object[]> reporte = new ArrayList<>();
+        Connection cn = conexion.conectar();
+        try {
+            String sql = "SELECT COALESCE(p.metodoPago, 'No especificado') as metodo, " +
+                         "COUNT(f.idFactura) as totalOperaciones, " +
+                         "SUM(f.totalPagar) as ingresoTotal " +
+                         "FROM tb_factura f " +
+                         "LEFT JOIN tb_pago p ON f.idFactura = p.idFactura " +
+                         "WHERE f.estado = 1 " +
+                         "GROUP BY p.metodoPago " +
+                         "ORDER BY ingresoTotal DESC";
+            
+            PreparedStatement ps = cn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            
+            while(rs.next()) {
+                Object[] fila = new Object[3];
+                fila[0] = rs.getString("metodo");
+                fila[1] = rs.getInt("totalOperaciones");
+                fila[2] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("ingresoTotal"));
+                reporte.add(fila);
+            }
+            cn.close();
+        } catch (SQLException e) {
+            System.out.println("Error en getReporteVentasMetodoPago: " + e);
+        }
+        return reporte;
+    }
+
+    public List<Object[]> getReporteRendimientoCajeros() {
+        List<Object[]> reporte = new ArrayList<>();
+        Connection cn = conexion.conectar();
+        try {
+            String sql = "SELECT u.nombre as vendedor, " +
+                         "COUNT(f.idFactura) as facturasEmitidas, " +
+                         "SUM(f.totalPagar) as totalVendido " +
+                         "FROM tb_factura f " +
+                         "JOIN tb_usuario u ON f.idUsuario = u.idUsuario " +
+                         "WHERE f.estado = 1 " +
+                         "GROUP BY u.idUsuario, u.nombre " +
+                         "ORDER BY totalVendido DESC";
+            
+            PreparedStatement ps = cn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            
+            while(rs.next()) {
+                Object[] fila = new Object[3];
+                fila[0] = rs.getString("vendedor");
+                fila[1] = rs.getInt("facturasEmitidas");
+                fila[2] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("totalVendido"));
+                reporte.add(fila);
+            }
+            cn.close();
+        } catch (SQLException e) {
+            System.out.println("Error en getReporteRendimientoCajeros: " + e);
+        }
+        return reporte;
+    }
+
+    public List<Object[]> getReporteStockCritico() {
+        List<Object[]> reporte = new ArrayList<>();
+        Connection cn = conexion.conectar();
+        try {
+            // Umbral de stock crítico: <= 10
+            String sql = "SELECT p.idProducto, p.nombre, p.cantidad, c.descripcion as categoria " +
+                         "FROM tb_producto p " +
+                         "JOIN tb_categoria c ON p.idCategoria = c.idCategoria " +
+                         "WHERE p.estado = 1 AND p.cantidad <= 10 " +
+                         "ORDER BY p.cantidad ASC";
+            
+            PreparedStatement ps = cn.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            
+            while(rs.next()) {
+                Object[] fila = new Object[4];
+                fila[0] = rs.getInt("idProducto");
+                fila[1] = rs.getString("nombre");
+                fila[2] = rs.getInt("cantidad");
+                fila[3] = rs.getString("categoria");
+                reporte.add(fila);
+            }
+            cn.close();
+        } catch (SQLException e) {
+            System.out.println("Error en getReporteStockCritico: " + e);
+        }
+        return reporte;
     }
 }
