@@ -1,4 +1,5 @@
 /nbproject/private/
 /build/
-/conexion/
-/servidor/
+src/conexion/
+src/servidor/
+src/conector/
