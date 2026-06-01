@@ -11,11 +11,11 @@ import modelo.Producto;
 
 public class Ctrl_Producto {
 
-    // Método para guardar un nuevo producto
     public boolean guardar(Producto objeto) {
         boolean respuesta = false;
         Connection cn = conexion.conectar();
         try {
+            cn.setAutoCommit(false); // Iniciar transacción
             PreparedStatement consulta = cn.prepareStatement(
                 "insert into tb_producto (nombre, cantidad, precio, descripcion, porcentajeIva, idCategoria, estado) values(?,?,?,?,?,?,?)"
             );
@@ -28,11 +28,39 @@ public class Ctrl_Producto {
             consulta.setInt(7, objeto.getEstado());
 
             if (consulta.executeUpdate() > 0) {
+                // Obtener ID generado usando LAST_INSERT_ID() para máxima compatibilidad
+                PreparedStatement psId = cn.prepareStatement("SELECT LAST_INSERT_ID()");
+                ResultSet rs = psId.executeQuery();
+                int idGenerado = 0;
+                if (rs.next()) {
+                    idGenerado = rs.getInt(1);
+                }
+                
+                // Si la cantidad inicial es mayor a 0, registrar el movimiento de inventario
+                if (idGenerado > 0 && objeto.getCantidad() > 0) {
+                    PreparedStatement psMov = cn.prepareStatement(
+                        "INSERT INTO tb_movimiento_inventario (idProducto, tipoMovimiento, cantidad, fechaMovimiento) VALUES (?, 'ENTRADA', ?, NOW())"
+                    );
+                    psMov.setInt(1, idGenerado);
+                    psMov.setInt(2, objeto.getCantidad());
+                    psMov.executeUpdate();
+                }
+                
+                cn.commit(); // Confirmar transacción
                 respuesta = true;
+            } else {
+                cn.rollback();
             }
-            cn.close();
         } catch (SQLException e) {
             System.out.println("Error al guardar producto: " + e);
+            try { if (cn != null) cn.rollback(); } catch (SQLException ex) {}
+        } finally {
+            try { 
+                if (cn != null) { 
+                    cn.setAutoCommit(true); 
+                    cn.close(); 
+                } 
+            } catch (SQLException e) {}
         }
         return respuesta;
     }
@@ -183,7 +211,7 @@ public class Ctrl_Producto {
                 fila[0] = rs.getInt("idProducto");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getInt("cantidad");
-                fila[3] = "$ " + String.format("%.2f", rs.getDouble("precio"));
+                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("precio"));
                 fila[4] = rs.getString("categoria");
                 fila[5] = rs.getInt("porcentajeIva") + "%";
                 fila[6] = rs.getInt("estado") == 1 ? "Activo" : "Inactivo";
@@ -214,7 +242,7 @@ public class Ctrl_Producto {
                 fila[0] = rs.getInt("idProducto");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getInt("cantidad");
-                fila[3] = "$ " + String.format("%.2f", rs.getDouble("precio"));
+                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("precio"));
                 fila[4] = rs.getString("categoria");
                 lista.add(fila);
             }
@@ -262,7 +290,7 @@ public class Ctrl_Producto {
                 fila[0] = rs.getInt("idProducto");
                 fila[1] = rs.getString("nombre");
                 fila[2] = rs.getInt("cantidad");
-                fila[3] = "$ " + String.format("%.2f", rs.getDouble("precio"));
+                fila[3] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", rs.getDouble("precio"));
                 fila[4] = rs.getString("categoria");
                 fila[5] = rs.getInt("porcentajeIva") + "%";
                 fila[6] = rs.getInt("estado") == 1 ? "Activo" : "Inactivo";

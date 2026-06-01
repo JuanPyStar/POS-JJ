@@ -65,57 +65,88 @@ public class Login extends javax.swing.JFrame {
             return;
         }
 
-        // Llamada al controlador
-        Ctrl_Usuario ctrl = new Ctrl_Usuario();
-        int resultado = ctrl.loginUser(usuario, password);
+        // Cambiar el estado del botón para indicar carga
+        jButton_inciarsesion.setEnabled(false);
+        jButton_inciarsesion.setText("Cargando...");
+        this.setCursor(new java.awt.Cursor(java.awt.Cursor.WAIT_CURSOR));
 
-        switch (resultado) {
+        javax.swing.SwingWorker<Integer, Void> worker = new javax.swing.SwingWorker<Integer, Void>() {
+            private modelo.Usuario obj;
 
-            case Ctrl_Usuario.LOGIN_OK:
-                modelo.Usuario obj = ctrl.getUsuarioLogueado();
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "¡Bienvenido, " + obj.getNombre() + " " + obj.getApellido() + "!",
-                    "Acceso exitoso",
-                    javax.swing.JOptionPane.INFORMATION_MESSAGE);
-                new Menu(obj).setVisible(true);
-                this.dispose();
-                break;
+            @Override
+            protected Integer doInBackground() throws Exception {
+                // Llamada al controlador
+                Ctrl_Usuario ctrl = new Ctrl_Usuario();
+                int res = ctrl.loginUser(usuario, password);
+                if (res == Ctrl_Usuario.LOGIN_OK) {
+                    obj = ctrl.getUsuarioLogueado();
+                }
+                return res;
+            }
 
-            case Ctrl_Usuario.USUARIO_NO_EXISTE:
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "El usuario \"" + usuario + "\" no existe.\nVerifica e inténtalo de nuevo.",
-                    "Usuario no encontrado",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-                txt_usuario.requestFocus();
-                txt_usuario.selectAll();
-                break;
+            @Override
+            protected void done() {
+                jButton_inciarsesion.setEnabled(true);
+                jButton_inciarsesion.setText("Iniciar Sesion");
+                Login.this.setCursor(new java.awt.Cursor(java.awt.Cursor.DEFAULT_CURSOR));
+                
+                try {
+                    int resultado = get();
+                    switch (resultado) {
+                        case Ctrl_Usuario.LOGIN_OK:
+                            javax.swing.JOptionPane.showMessageDialog(Login.this,
+                                "¡Bienvenido, " + obj.getNombre() + " " + obj.getApellido() + "!",
+                                "Acceso exitoso",
+                                javax.swing.JOptionPane.INFORMATION_MESSAGE);
+                            new Menu(obj).setVisible(true);
+                            Login.this.dispose();
+                            break;
 
-            case Ctrl_Usuario.PASSWORD_INCORRECTA:
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "Contraseña incorrecta.\nInténtalo de nuevo.",
-                    "Contraseña incorrecta",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-                txt_contraseña.setText("");
-                txt_contraseña.requestFocus();
-                break;
+                        case Ctrl_Usuario.USUARIO_NO_EXISTE:
+                            javax.swing.JOptionPane.showMessageDialog(Login.this,
+                                "El usuario \"" + usuario + "\" no existe.\nVerifica e inténtalo de nuevo.",
+                                "Usuario no encontrado",
+                                javax.swing.JOptionPane.ERROR_MESSAGE);
+                            txt_usuario.requestFocus();
+                            txt_usuario.selectAll();
+                            break;
 
-            case Ctrl_Usuario.CUENTA_INACTIVA:
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "Tu cuenta está desactivada.\nContacta al administrador.",
-                    "Cuenta inactiva",
-                    javax.swing.JOptionPane.WARNING_MESSAGE);
-                txt_usuario.setText("");
-                txt_contraseña.setText("");
-                txt_usuario.requestFocus();
-                break;
+                        case Ctrl_Usuario.PASSWORD_INCORRECTA:
+                            javax.swing.JOptionPane.showMessageDialog(Login.this,
+                                "Contraseña incorrecta.\nInténtalo de nuevo.",
+                                "Contraseña incorrecta",
+                                javax.swing.JOptionPane.ERROR_MESSAGE);
+                            txt_contraseña.setText("");
+                            txt_contraseña.requestFocus();
+                            break;
 
-            case Ctrl_Usuario.ERROR_CONEXION:
-                javax.swing.JOptionPane.showMessageDialog(this,
-                    "No se pudo conectar a la base de datos.\nVerifica la conexión.",
-                    "Error de conexión",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
-                break;
-        }
+                        case Ctrl_Usuario.CUENTA_INACTIVA:
+                            javax.swing.JOptionPane.showMessageDialog(Login.this,
+                                "Tu cuenta está desactivada.\nContacta al administrador.",
+                                "Cuenta inactiva",
+                                javax.swing.JOptionPane.WARNING_MESSAGE);
+                            txt_usuario.setText("");
+                            txt_contraseña.setText("");
+                            txt_usuario.requestFocus();
+                            break;
+
+                        case Ctrl_Usuario.ERROR_CONEXION:
+                            javax.swing.JOptionPane.showMessageDialog(Login.this,
+                                "No se pudo conectar a la base de datos.\nVerifica la conexión.",
+                                "Error de conexión",
+                                javax.swing.JOptionPane.ERROR_MESSAGE);
+                            break;
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(Login.this,
+                        "Ocurrió un error inesperado al intentar iniciar sesión.",
+                        "Error",
+                        javax.swing.JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        worker.execute();
     }
     // =================================================================
 
@@ -254,6 +285,8 @@ public class Login extends javax.swing.JFrame {
      * @param args the command line arguments
      */
     public static void main(String args[]) {
+        // Sincronizar toda la aplicación con la hora de Colombia
+        java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/Bogota"));
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -272,7 +305,24 @@ public class Login extends javax.swing.JFrame {
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Login().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> {
+            // Establecer fuente global para todos los componentes de Swing (Textos, Listas, Combos, etc)
+            java.awt.Font fontGlobal = new java.awt.Font("Yu Gothic UI", java.awt.Font.PLAIN, 18);
+            java.util.Enumeration<Object> keys = javax.swing.UIManager.getDefaults().keys();
+            while (keys.hasMoreElements()) {
+                Object key = keys.nextElement();
+                Object value = javax.swing.UIManager.get(key);
+                if (value instanceof javax.swing.plaf.FontUIResource) {
+                    javax.swing.UIManager.put(key, new javax.swing.plaf.FontUIResource(fontGlobal));
+                }
+            }
+            
+            // Aumentar tamaño global de las Alertas (JOptionPane) para ajustarse a pantallas grandes
+            javax.swing.UIManager.put("OptionPane.messageFont", new java.awt.Font("Yu Gothic UI", java.awt.Font.PLAIN, 18));
+            javax.swing.UIManager.put("OptionPane.buttonFont", new java.awt.Font("Yu Gothic UI", java.awt.Font.BOLD, 16));
+            
+            new Login().setVisible(true);
+        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -106,17 +106,36 @@ public class PanelVentasDelDia extends JPanel {
 
     private void cargarHistorial() {
         modeloFacturas.setRowCount(0);
-        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+        Object[] filaCarga = new Object[]{"Cargando...", "", "", "", ""};
+        modeloFacturas.addRow(filaCarga);
         
-        for (Object[] fila : ctrl.getFacturasDia()) {
-            Object[] filaFormato = new Object[5];
-            filaFormato[0] = fila[0]; // ID
-            filaFormato[1] = fila[1]; // Número Factura
-            filaFormato[2] = fila[2]; // Fecha
-            filaFormato[3] = "$ " + String.format("%.0f", (double) fila[3]); // Total con formato
-            filaFormato[4] = fila[4]; // Método Pago
-            modeloFacturas.addRow(filaFormato);
-        }
+        javax.swing.SwingWorker<java.util.List<Object[]>, Void> worker = new javax.swing.SwingWorker<java.util.List<Object[]>, Void>() {
+            @Override
+            protected java.util.List<Object[]> doInBackground() throws Exception {
+                Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+                return ctrl.getFacturasDia();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    java.util.List<Object[]> datos = get();
+                    modeloFacturas.setRowCount(0);
+                    for (Object[] fila : datos) {
+                        Object[] filaFormato = new Object[5];
+                        filaFormato[0] = fila[0]; // ID
+                        filaFormato[1] = fila[1]; // Número Factura
+                        filaFormato[2] = fila[2]; // Fecha
+                        filaFormato[3] = "$ " + String.format("%.0f", (double) fila[3]); // Total con formato
+                        filaFormato[4] = fila[4]; // Método Pago
+                        modeloFacturas.addRow(filaFormato);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void abrirDetalles() {

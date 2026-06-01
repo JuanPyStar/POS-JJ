@@ -25,10 +25,50 @@ public class PanelDashboard extends JPanel {
         this.setLayout(new BorderLayout(20, 20));
         this.setBorder(new EmptyBorder(30, 30, 30, 30));
 
-        inicializarComponentes();
+        refrescarDatos();
     }
 
-    private void inicializarComponentes() {
+    public void refrescarDatos() {
+        this.removeAll();
+        this.setLayout(new BorderLayout());
+        
+        JLabel lblCargando = new JLabel("Cargando dashboard...", SwingConstants.CENTER);
+        lblCargando.setFont(new Font("Yu Gothic UI", Font.BOLD, 24));
+        lblCargando.setForeground(colorAzulPrincipal);
+        this.add(lblCargando, BorderLayout.CENTER);
+        this.revalidate();
+        this.repaint();
+        
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            int ventasHoy;
+            double ingresosHoy;
+            int totalProductos;
+            int totalUsuarios;
+            List<Object[]> ventasSemanales;
+            
+            @Override
+            protected Void doInBackground() throws Exception {
+                Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+                ventasHoy = ctrl.getTotalVentasDia();
+                ingresosHoy = ctrl.getTotalIngresosDia();
+                totalProductos = ctrl.getTotalProductos();
+                totalUsuarios = ctrl.getTotalUsuarios();
+                ventasSemanales = ctrl.getVentasSemanales();
+                return null;
+            }
+            
+            @Override
+            protected void done() {
+                construirUI(ventasHoy, ingresosHoy, totalProductos, totalUsuarios, ventasSemanales);
+            }
+        };
+        worker.execute();
+    }
+
+    private void construirUI(int ventasHoy, double ingresosHoy, int totalProductos, int totalUsuarios, List<Object[]> ventasSemanales) {
+        this.removeAll();
+        this.setLayout(new BorderLayout(20, 20));
+        
         // --- HEADER ---
         JPanel panelHeader = new JPanel(new BorderLayout());
         panelHeader.setBackground(colorFondo);
@@ -54,29 +94,16 @@ public class PanelDashboard extends JPanel {
         btnRecargar.setBackground(colorAzulPrincipal);
         btnRecargar.setForeground(Color.WHITE);
         btnRecargar.setFocusPainted(false);
-        btnRecargar.addActionListener(e -> {
-            this.removeAll();
-            inicializarComponentes();
-            this.revalidate();
-            this.repaint();
-        });
+        btnRecargar.addActionListener(e -> refrescarDatos());
         panelHeader.add(btnRecargar, BorderLayout.EAST);
         
         this.add(panelHeader, BorderLayout.NORTH);
-
-        // --- CARGAR DATOS REALES ---
-        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
-        int ventasHoy = ctrl.getTotalVentasDia();
-        double ingresosHoy = ctrl.getTotalIngresosDia();
-        int totalProductos = ctrl.getTotalProductos();
-        int totalUsuarios = ctrl.getTotalUsuarios();
 
         // --- CARDS ESTADÍSTICAS ---
         JPanel panelCards = new JPanel(new GridLayout(1, 4, 20, 0));
         panelCards.setBackground(colorFondo);
         panelCards.setPreferredSize(new Dimension(0, 150));
         
-        // Se crean las cards y se les asigna la navegación
         panelCards.add(crearCardClickeable("Ventas del Día", String.valueOf(ventasHoy), new Color(46, 204, 113), "VentasDelDia"));
         panelCards.add(crearCardClickeable("Total Productos", String.valueOf(totalProductos), colorAzulPrincipal, "Productos"));
         panelCards.add(crearCardClickeable("Ingresos Netos", String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", ingresosHoy), new Color(155, 89, 182), "Reportes"));
@@ -95,7 +122,6 @@ public class PanelDashboard extends JPanel {
         lblGrafica.setForeground(colorTexto);
         panelGraficas.add(lblGrafica, BorderLayout.NORTH);
 
-        List<Object[]> ventasSemanales = ctrl.getVentasSemanales();
         panelGraficas.add(crearPanelGraficaVentasSemanales(ventasSemanales), BorderLayout.CENTER);
 
         // --- ENSAMBLAJE CENTRO ---
@@ -108,6 +134,9 @@ public class PanelDashboard extends JPanel {
         panelCentro.add(panelGraficas);
 
         this.add(panelCentro, BorderLayout.CENTER);
+        
+        this.revalidate();
+        this.repaint();
     }
 
     private JPanel crearCardClickeable(String titulo, String valor, Color colorBorde, String destinoPanel) {
@@ -208,7 +237,7 @@ public class PanelDashboard extends JPanel {
                     int labelWidth = metrics.stringWidth(etiqueta);
                     g.drawString(etiqueta, x + Math.max(0, (barraAncho - labelWidth) / 2), alto - padding);
 
-                    String valorTexto = String.format("$%.0f", valor);
+                    String valorTexto = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", valor);
                     int valorTextoWidth = metrics.stringWidth(valorTexto);
                     g.drawString(valorTexto, x + Math.max(0, (barraAncho - valorTextoWidth) / 2), y - 8);
                 }

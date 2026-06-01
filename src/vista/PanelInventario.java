@@ -18,6 +18,10 @@ public class PanelInventario extends JPanel {
     private JButton btnVerTodos;
     private JButton btnVerEntradas;
     private JButton btnVerSalidas;
+    
+    private String tipoFiltroActivo = null;
+    private JTextField txtBuscarProducto;
+    private JComboBox<String> cbFechasInventario;
 
     public PanelInventario() {
         this.setBackground(colorFondo);
@@ -63,25 +67,71 @@ public class PanelInventario extends JPanel {
         btnVerTodos.setForeground(Color.WHITE);
         btnVerTodos.setFocusPainted(false);
         btnVerTodos.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
-        btnVerTodos.addActionListener(e -> cargarDatosTabla(null));
+        btnVerTodos.addActionListener(e -> aplicarFiltro(null));
 
         btnVerEntradas = new JButton("Entradas");
         btnVerEntradas.setBackground(new Color(46, 204, 113));
         btnVerEntradas.setForeground(Color.WHITE);
         btnVerEntradas.setFocusPainted(false);
         btnVerEntradas.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
-        btnVerEntradas.addActionListener(e -> cargarDatosTabla("ENTRADA"));
+        btnVerEntradas.addActionListener(e -> aplicarFiltro("ENTRADA"));
 
         btnVerSalidas = new JButton("Salidas");
         btnVerSalidas.setBackground(new Color(231, 76, 60));
         btnVerSalidas.setForeground(Color.WHITE);
         btnVerSalidas.setFocusPainted(false);
         btnVerSalidas.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
-        btnVerSalidas.addActionListener(e -> cargarDatosTabla("SALIDA"));
+        btnVerSalidas.addActionListener(e -> aplicarFiltro("SALIDA"));
         
         panelFiltros.add(btnVerTodos);
         panelFiltros.add(btnVerEntradas);
         panelFiltros.add(btnVerSalidas);
+        
+        // Separador visual
+        panelFiltros.add(Box.createRigidArea(new Dimension(20, 0)));
+        
+        JLabel lblProducto = new JLabel("Producto:");
+        lblProducto.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+        
+        txtBuscarProducto = new JTextField();
+        txtBuscarProducto.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
+        txtBuscarProducto.setPreferredSize(new Dimension(150, 32));
+        
+        JLabel lblFecha = new JLabel("Fecha:");
+        lblFecha.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+        
+        cbFechasInventario = new JComboBox<>();
+        cbFechasInventario.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
+        cbFechasInventario.setPreferredSize(new Dimension(150, 32));
+        cargarFechasMovimientos();
+        
+        JButton btnBuscar = new JButton("Buscar");
+        btnBuscar.setBackground(colorAzulPrincipal);
+        btnBuscar.setForeground(Color.WHITE);
+        btnBuscar.setFocusPainted(false);
+        btnBuscar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnBuscar.addActionListener(e -> aplicarFiltro(tipoFiltroActivo));
+        
+        JButton btnLimpiar = new JButton("Limpiar");
+        btnLimpiar.setBackground(new Color(231, 76, 60)); // Rojo
+        btnLimpiar.setForeground(Color.WHITE);
+        btnLimpiar.setFocusPainted(false);
+        btnLimpiar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnLimpiar.addActionListener(e -> {
+            txtBuscarProducto.setText("");
+            if(cbFechasInventario.getItemCount() > 0) {
+                cbFechasInventario.setSelectedIndex(0);
+            }
+            tipoFiltroActivo = null;
+            aplicarFiltro(null);
+        });
+        
+        panelFiltros.add(lblProducto);
+        panelFiltros.add(txtBuscarProducto);
+        panelFiltros.add(lblFecha);
+        panelFiltros.add(cbFechasInventario);
+        panelFiltros.add(btnBuscar);
+        panelFiltros.add(btnLimpiar);
 
         // --- PANEL NORTE ---
         JPanel panelNorte = new JPanel();
@@ -94,7 +144,7 @@ public class PanelInventario extends JPanel {
         this.add(panelNorte, BorderLayout.NORTH);
 
         // --- TABLA DE INVENTARIO ---
-        String[] columnas = {"ID", "PRODUCTO", "STOCK ACTUAL", "TIPO MOV.", "CANTIDAD MOV.", "FECHA", "TIPO"};
+        String[] columnas = {"ID", "PRODUCTO", "TIPO MOV.", "CANTIDAD", "FECHA"};
         modeloTabla = new DefaultTableModel(null, columnas) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -103,17 +153,17 @@ public class PanelInventario extends JPanel {
         JTable tabla = new JTable(modeloTabla);
         tabla.setBackground(Color.WHITE);
         tabla.setForeground(colorTexto);
-        tabla.setRowHeight(40);
+        tabla.setRowHeight(45);
         tabla.setGridColor(new Color(230, 230, 230));
         tabla.setSelectionBackground(new Color(200, 220, 255));
-        tabla.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
+        tabla.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
 
         JTableHeader header = tabla.getTableHeader();
         header.setReorderingAllowed(false);
         header.setBackground(colorAzulPrincipal);
         header.setForeground(Color.WHITE);
-        header.setFont(new Font("Yu Gothic UI", Font.BOLD, 15));
-        header.setPreferredSize(new Dimension(0, 45));
+        header.setFont(new Font("Yu Gothic UI", Font.BOLD, 17));
+        header.setPreferredSize(new Dimension(0, 55));
 
         JScrollPane scrollPane = new JScrollPane(tabla);
         scrollPane.getViewport().setBackground(Color.WHITE);
@@ -122,16 +172,85 @@ public class PanelInventario extends JPanel {
         this.add(scrollPane, BorderLayout.CENTER);
     }
     
+    private void cargarFechasMovimientos() {
+        cbFechasInventario.removeAllItems();
+        cbFechasInventario.addItem("Cargando...");
+        javax.swing.SwingWorker<java.util.List<String>, Void> worker = new javax.swing.SwingWorker<java.util.List<String>, Void>() {
+            @Override
+            protected java.util.List<String> doInBackground() throws Exception {
+                java.util.List<String> fechas = new java.util.ArrayList<>();
+                try {
+                    java.sql.Connection cn = conexion.conexion.conectar();
+                    java.sql.PreparedStatement ps = cn.prepareStatement("SELECT DISTINCT DATE(fechaMovimiento) as fecha FROM tb_movimiento_inventario ORDER BY fecha DESC");
+                    java.sql.ResultSet rs = ps.executeQuery();
+                    while (rs.next()) {
+                        fechas.add(rs.getString("fecha"));
+                    }
+                    cn.close();
+                } catch (Exception e) {}
+                return fechas;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    java.util.List<String> fechas = get();
+                    cbFechasInventario.removeAllItems();
+                    cbFechasInventario.addItem("Todas las fechas");
+                    for (String f : fechas) {
+                        cbFechasInventario.addItem(f);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void aplicarFiltro(String tipo) {
+        this.tipoFiltroActivo = tipo;
+        String busqueda = txtBuscarProducto.getText();
+        String fecha = cbFechasInventario.getSelectedItem() != null ? cbFechasInventario.getSelectedItem().toString() : "Todas las fechas";
+        if (fecha.equals("Cargando...")) {
+            fecha = "Todas las fechas";
+        }
+        final String fechaQuery = fecha;
+
+        modeloTabla.setRowCount(0);
+        Object[] filaCarga = new Object[]{"Cargando...", "", "", "", ""};
+        modeloTabla.addRow(filaCarga);
+        
+        javax.swing.SwingWorker<java.util.List<Object[]>, Void> worker = new javax.swing.SwingWorker<java.util.List<Object[]>, Void>() {
+            @Override
+            protected java.util.List<Object[]> doInBackground() throws Exception {
+                Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
+                return ctrl.getMovimientosInventario(tipo, busqueda, fechaQuery);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    java.util.List<Object[]> datos = get();
+                    modeloTabla.setRowCount(0);
+                    for (Object[] fila : datos) {
+                        Object[] nuevaFila = { fila[0], fila[1], fila[3], fila[4], fila[5] };
+                        modeloTabla.addRow(nuevaFila);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        worker.execute();
+    }
+    
     public void cargarDatosTabla() {
-        cargarDatosTabla(null);
+        cargarFechasMovimientos(); // Actualizar fechas por si hubo movimientos nuevos
+        aplicarFiltro(null);
     }
 
     public void cargarDatosTabla(String tipo) {
-        modeloTabla.setRowCount(0);
-        Ctrl_Dashboard ctrl = new Ctrl_Dashboard();
-        
-        for (Object[] fila : ctrl.getMovimientosInventario(tipo)) {
-            modeloTabla.addRow(fila);
-        }
+        aplicarFiltro(tipo);
     }
 }

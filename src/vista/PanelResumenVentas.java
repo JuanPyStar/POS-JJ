@@ -44,9 +44,21 @@ public class PanelResumenVentas extends JPanel {
     }
 
     public void refrescarDatos() {
-        cargarDatosHoy();
-        cargarDatosGrafica();
-        chartPanel.repaint();
+        lblTotalHoy.setText("Cargando...");
+        javax.swing.SwingWorker<Void, Void> worker = new javax.swing.SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                cargarDatosHoy();
+                cargarDatosGrafica();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                chartPanel.repaint();
+            }
+        };
+        worker.execute();
     }
 
     private void inicializarComponentes() {
@@ -96,7 +108,14 @@ public class PanelResumenVentas extends JPanel {
         chartPanel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // Navegar a Historial refrescando datos
+                // Verificar si se hizo clic en una barra específica
+                for (VentaDia v : datosGrafica) {
+                    if (v.bounds != null && v.bounds.contains(e.getPoint())) {
+                        menuPrincipal.mostrarHistorialTurno(v.idTurno);
+                        return;
+                    }
+                }
+                // Navegar a Historial general si no clicó en ninguna barra
                 menuPrincipal.mostrarHistorial();
             }
         });
@@ -136,8 +155,8 @@ public class PanelResumenVentas extends JPanel {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 double total = rs.getDouble("totalHoy");
-                lblTotalHoy.setText(
-                        "Total Ventas: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", total));
+                final String texto = "Total Ventas: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", total);
+                javax.swing.SwingUtilities.invokeLater(() -> lblTotalHoy.setText(texto));
             }
             cn.close();
         } catch (SQLException e) {
@@ -156,7 +175,7 @@ public class PanelResumenVentas extends JPanel {
 
             boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
-                sql += "AND t.idUsuario = ? ";
+                sql += "AND t.idUsuario = ? AND t.estado = 1 ";
             }
 
             sql += "ORDER BY t.idTurno DESC LIMIT 7";
@@ -171,7 +190,7 @@ public class PanelResumenVentas extends JPanel {
                 String fechaCompleta = rs.getString("fecha");
                 // T1 28/05
                 String etiqueta = "T" + rs.getInt("idTurno") + " " + fechaCompleta.substring(8, 10) + "/" + fechaCompleta.substring(5, 7);
-                datosGrafica.add(new VentaDia(etiqueta, rs.getDouble("total")));
+                datosGrafica.add(new VentaDia(rs.getInt("idTurno"), etiqueta, rs.getDouble("total")));
             }
             cn.close();
 
@@ -184,10 +203,13 @@ public class PanelResumenVentas extends JPanel {
 
     // Clase interna para guardar el par Fecha - Total
     private class VentaDia {
+        int idTurno;
         String fecha;
         double total;
+        Rectangle bounds;
 
-        VentaDia(String fecha, double total) {
+        VentaDia(int idTurno, String fecha, double total) {
+            this.idTurno = idTurno;
             this.fecha = fecha;
             this.total = total;
         }
@@ -249,6 +271,9 @@ public class PanelResumenVentas extends JPanel {
                 g2.fillRect(x, y, barWidth, barHeight);
                 g2.setColor(colorAzulPrincipal);
                 g2.drawRect(x, y, barWidth, barHeight);
+
+                // Guardar área de clic (incluyendo espacio superior para atrapar mejor el clic)
+                v.bounds = new Rectangle(x, padding, barWidth, height - 2 * padding);
 
                 // Texto Fecha (Eje X)
                 g2.setColor(Color.DARK_GRAY);

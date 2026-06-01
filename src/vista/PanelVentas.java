@@ -38,7 +38,8 @@ public class PanelVentas extends JPanel {
     private JLabel lblSubtotalValor;
     private JLabel lblIvaValor;
     private JLabel lblTotalPagar;
-    private JComboBox<String> cbMetodoPago;
+    private JButton btnAbrirTurno;
+    private JButton btnCerrarTurno;
 
     private double subtotalG = 0.0;
     private double ivaG = 0.0;
@@ -67,32 +68,44 @@ public class PanelVentas extends JPanel {
         lblTitulo.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
         lblTitulo.setForeground(colorAzulPrincipal);
 
-        // Cargar estado inicial del turno
-        controlador.Ctrl_Turno ctrlTurno = new controlador.Ctrl_Turno();
-        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
-
-        JButton btnAbrirTurno = new JButton("Abrir Turno");
+        // Cargar estado inicial del turno (Asíncrono)
+        btnAbrirTurno = new JButton("Abrir Turno");
         btnAbrirTurno.setBackground(new Color(0, 153, 51)); // Verde
         btnAbrirTurno.setForeground(Color.WHITE);
         btnAbrirTurno.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
         btnAbrirTurno.setFocusPainted(false);
         btnAbrirTurno.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        btnAbrirTurno.setEnabled(false); // Deshabilitado por defecto hasta cargar estado
         
-        JButton btnCerrarTurno = new JButton("Cerrar Turno");
+        btnCerrarTurno = new JButton("Cerrar Turno");
         btnCerrarTurno.setBackground(new Color(204, 0, 0)); // Rojo
         btnCerrarTurno.setForeground(Color.WHITE);
         btnCerrarTurno.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
         btnCerrarTurno.setFocusPainted(false);
         btnCerrarTurno.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        btnCerrarTurno.setEnabled(false);
 
-        // Habilitar/deshabilitar según estado
-        if (turnoActivo != null) {
-            btnAbrirTurno.setEnabled(false);
-            btnCerrarTurno.setEnabled(true);
-        } else {
-            btnAbrirTurno.setEnabled(true);
-            btnCerrarTurno.setEnabled(false);
-        }
+        controlador.Ctrl_Turno ctrlTurno = new controlador.Ctrl_Turno();
+        javax.swing.SwingWorker<modelo.Turno, Void> workerTurno = new javax.swing.SwingWorker<modelo.Turno, Void>() {
+            @Override
+            protected modelo.Turno doInBackground() throws Exception {
+                return ctrlTurno.getTurnoActivo();
+            }
+            @Override
+            protected void done() {
+                try {
+                    modelo.Turno turnoActivo = get();
+                    if (turnoActivo != null) {
+                        btnAbrirTurno.setEnabled(false);
+                        btnCerrarTurno.setEnabled(true);
+                    } else {
+                        btnAbrirTurno.setEnabled(true);
+                        btnCerrarTurno.setEnabled(false);
+                    }
+                } catch (Exception e) {}
+            }
+        };
+        workerTurno.execute();
 
         btnAbrirTurno.addActionListener(e -> {
             vista.FrmTurno frm = new vista.FrmTurno(null, true, usuario.getIdUsuario());
@@ -199,7 +212,7 @@ public class PanelVentas extends JPanel {
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),
                 new EmptyBorder(15, 15, 15, 15)
         ));
-        panelDerecho.setPreferredSize(new Dimension(480, 0));
+        panelDerecho.setPreferredSize(new Dimension(580, 0));
 
         JLabel lblCarrito = new JLabel("Factura Actual");
         lblCarrito.setForeground(colorAzulPrincipal);
@@ -249,29 +262,21 @@ public class PanelVentas extends JPanel {
         panelTotales.add(Box.createRigidArea(new Dimension(0, 10)));
         
         lblTotalPagar = new JLabel("Total: $ 0");
-        lblTotalPagar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
+        lblTotalPagar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 36));
         lblTotalPagar.setForeground(colorVerde);
         lblTotalPagar.setAlignmentX(Component.RIGHT_ALIGNMENT);
         panelTotales.add(lblTotalPagar);
 
-        panelTotales.add(Box.createRigidArea(new Dimension(0, 20)));
+        panelTotales.add(Box.createRigidArea(new Dimension(0, 30)));
 
-        String[] metodos = {"Efectivo", "Tarjeta Crédito", "Tarjeta Débito", "Transferencia"};
-        cbMetodoPago = new JComboBox<>(metodos);
-        cbMetodoPago.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
-        cbMetodoPago.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-        panelTotales.add(cbMetodoPago);
-        
-        panelTotales.add(Box.createRigidArea(new Dimension(0, 15)));
-
-        JButton btnCobrar = new JButton("Confirmar Venta");
+        JButton btnCobrar = new JButton("Pagar Venta");
         btnCobrar.setBackground(colorVerde);
         btnCobrar.setForeground(Color.WHITE);
-        btnCobrar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 18));
+        btnCobrar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 24));
         btnCobrar.setFocusPainted(false);
-        btnCobrar.setPreferredSize(new Dimension(0, 50));
+        btnCobrar.setPreferredSize(new Dimension(0, 65));
         btnCobrar.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnCobrar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        btnCobrar.setMaximumSize(new Dimension(Integer.MAX_VALUE, 65));
         
         btnCobrar.addActionListener(e -> confirmarVenta());
         
@@ -289,37 +294,60 @@ public class PanelVentas extends JPanel {
 
     private void cargarProductosBusqueda(String filtro) {
         modeloBuscar.setRowCount(0);
-        Ctrl_Producto ctrl = new Ctrl_Producto();
-        List<Producto> lista = ctrl.buscarProductos(filtro);
+        Object[] filaCarga = new Object[]{"", "Cargando...", "", "", "", "", ""};
+        modeloBuscar.addRow(filaCarga);
         
-        for (Producto p : lista) {
-            Object[] fila = new Object[7];
-            fila[0] = p.getIdProducto();
-            fila[1] = p.getNombre();
-            fila[2] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", p.getPrecio());
-            fila[3] = p.getCantidad();
-            fila[4] = p.getPorcentajeIva() + "%";
-            fila[5] = " - ";
-            
-            // Revisar cuántos de este producto ya están en el carrito
-            int cantidadEnCarrito = 0;
-            for (DetalleFactura d : detallesCarrito) {
-                if (d.getIdProducto() == p.getIdProducto()) {
-                    cantidadEnCarrito = d.getCantidad();
-                    break;
+        javax.swing.SwingWorker<List<Producto>, Void> worker = new javax.swing.SwingWorker<List<Producto>, Void>() {
+            @Override
+            protected List<Producto> doInBackground() throws Exception {
+                Ctrl_Producto ctrl = new Ctrl_Producto();
+                return ctrl.buscarProductos(filtro);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Producto> lista = get();
+                    modeloBuscar.setRowCount(0);
+                    for (Producto p : lista) {
+                        Object[] fila = new Object[7];
+                        fila[0] = p.getIdProducto();
+                        fila[1] = p.getNombre();
+                        fila[2] = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", p.getPrecio());
+                        fila[3] = p.getCantidad();
+                        fila[4] = p.getPorcentajeIva() + "%";
+                        fila[5] = " - ";
+                        
+                        // Revisar cuántos de este producto ya están en el carrito
+                        int cantidadEnCarrito = 0;
+                        for (DetalleFactura d : detallesCarrito) {
+                            if (d.getIdProducto() == p.getIdProducto()) {
+                                cantidadEnCarrito = d.getCantidad();
+                                break;
+                            }
+                        }
+                        if (cantidadEnCarrito > 0) {
+                            fila[6] = "+ (" + cantidadEnCarrito + ")";
+                        } else {
+                            fila[6] = "+";
+                        }
+                        
+                        modeloBuscar.addRow(fila);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
-            if (cantidadEnCarrito > 0) {
-                fila[6] = "+ (" + cantidadEnCarrito + ")";
-            } else {
-                fila[6] = "+";
-            }
-            
-            modeloBuscar.addRow(fila);
-        }
+        };
+        worker.execute();
     }
 
     private void agregarAlCarrito(int filaSelec) {
+        if (btnAbrirTurno != null && btnAbrirTurno.isEnabled()) {
+            JOptionPane.showMessageDialog(this, "Debe abrir un turno antes de poder registrar productos.", "Turno Cerrado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         int idProd = (int) tablaBuscar.getValueAt(filaSelec, 0);
         String nombre = tablaBuscar.getValueAt(filaSelec, 1).toString();
         // Limpiar el formato de precio de "$ 4.500" a "4500" para cálculos
@@ -494,9 +522,26 @@ public class PanelVentas extends JPanel {
     }
 
     private void confirmarVenta() {
+        if (btnAbrirTurno != null && btnAbrirTurno.isEnabled()) {
+            JOptionPane.showMessageDialog(this, "Debe abrir un turno antes de realizar una venta.", "Turno Cerrado", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         if (detallesCarrito.isEmpty()) {
             JOptionPane.showMessageDialog(this, "El carrito está vacío. Agregue productos.");
             return;
+        }
+        
+        String[] pagoData = mostrarDialogoCobro(totalG);
+        
+        if (pagoData[0] == null) {
+            return; // El usuario canceló o no completó el pago
+        }
+        
+        // Si no es efectivo, concatenamos la referencia obligatoria para que quede en el historial
+        String metodo = pagoData[0];
+        if (!metodo.equals("Efectivo")) {
+            metodo = metodo + " (Ref: " + pagoData[1] + ")";
         }
 
         Factura factura = new Factura();
@@ -507,12 +552,20 @@ public class PanelVentas extends JPanel {
         factura.setTotalIva(ivaG);
         factura.setTotalPagar(totalG);
 
-        String metodo = cbMetodoPago.getSelectedItem().toString();
         Ctrl_Factura ctrl = new Ctrl_Factura();
-        boolean exito = ctrl.guardarVenta(factura, detallesCarrito, metodo);
+        int idFacturaGenerada = ctrl.guardarVenta(factura, detallesCarrito, metodo);
 
-        if (exito) {
-            JOptionPane.showMessageDialog(this, "¡Venta registrada con éxito!\nTotal cobrado: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", totalG));
+        if (idFacturaGenerada > 0) {
+            String totalCobrado = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", totalG);
+            
+            // Imprimir de inmediato (sin preguntar)
+            controlador.Ctrl_Impresora.imprimirFactura(idFacturaGenerada);
+            
+            // Mostrar la alerta obligatoria de venta exitosa justo DESPUÉS de que se termine de imprimir o guardar
+            JOptionPane.showMessageDialog(this,
+                    "¡VENTA REGISTRADA CON ÉXITO!\n\nTotal cobrado: " + totalCobrado,
+                    "Venta Exitosa",
+                    JOptionPane.INFORMATION_MESSAGE);
             
             detallesCarrito.clear();
             modeloCarrito.setRowCount(0);
@@ -528,18 +581,18 @@ public class PanelVentas extends JPanel {
         JTable tabla = new JTable(modelo);
         tabla.setBackground(Color.WHITE);
         tabla.setForeground(colorTexto);
-        tabla.setRowHeight(35);
+        tabla.setRowHeight(45);
         tabla.setGridColor(new Color(230, 230, 230));
         tabla.setSelectionBackground(new Color(200, 220, 255));
         tabla.setSelectionForeground(Color.BLACK);
-        tabla.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
+        tabla.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
 
         JTableHeader header = tabla.getTableHeader();
         header.setReorderingAllowed(false);
         header.setBackground(colorAzulPrincipal);
         header.setForeground(Color.WHITE);
-        header.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
-        header.setPreferredSize(new Dimension(0, 40));
+        header.setFont(new Font("Yu Gothic UI", Font.BOLD, 16));
+        header.setPreferredSize(new Dimension(0, 50));
         
         return tabla;
     }
@@ -560,5 +613,169 @@ public class PanelVentas extends JPanel {
         panel.add(lblValor, BorderLayout.EAST);
         
         return panel;
+    }
+
+    private String[] mostrarDialogoCobro(double totalAPagar) {
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Procesar Pago", true);
+        dialog.setSize(500, 450);
+        dialog.setLocationRelativeTo(this);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel panelCentro = new JPanel();
+        panelCentro.setLayout(new BoxLayout(panelCentro, BoxLayout.Y_AXIS));
+        panelCentro.setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+
+        JLabel lblTotal = new JLabel("Total a cobrar: " + String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", totalAPagar));
+        lblTotal.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 32));
+        lblTotal.setForeground(new Color(0, 153, 51));
+        lblTotal.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JComboBox<String> comboMetodos = new JComboBox<>(new String[]{"Efectivo", "Tarjeta Crédito", "Tarjeta Débito", "Transferencia"});
+        comboMetodos.setFont(new Font("Yu Gothic UI", Font.PLAIN, 20));
+        comboMetodos.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
+        JPanel panelDinamico = new JPanel(new CardLayout());
+        panelDinamico.setBorder(BorderFactory.createTitledBorder("Detalles del Pago"));
+        
+        // --- Panel Efectivo ---
+        JPanel pnlEfectivo = new JPanel(new GridLayout(2, 2, 10, 15));
+        JLabel lblRecibido = new JLabel("Efectivo Recibido:");
+        lblRecibido.setFont(new Font("Yu Gothic UI", Font.PLAIN, 18));
+        JTextField txtRecibido = new JTextField();
+        txtRecibido.setFont(new Font("Yu Gothic UI", Font.BOLD, 22));
+        
+        JLabel lblCambioTxt = new JLabel("Cambio a devolver:");
+        lblCambioTxt.setFont(new Font("Yu Gothic UI", Font.BOLD, 18));
+        JLabel lblCambio = new JLabel("$ 0");
+        lblCambio.setForeground(Color.RED);
+        lblCambio.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 24));
+        
+        pnlEfectivo.add(lblRecibido);
+        pnlEfectivo.add(txtRecibido);
+        pnlEfectivo.add(lblCambioTxt);
+        pnlEfectivo.add(lblCambio);
+
+        // --- Panel Referencia ---
+        JPanel pnlReferencia = new JPanel(new GridLayout(2, 1, 5, 5));
+        JLabel lblRef = new JLabel("N° Aprobación / Referencia (Obligatorio):");
+        lblRef.setFont(new Font("Yu Gothic UI", Font.PLAIN, 18));
+        lblRef.setForeground(new Color(204, 0, 0)); // Resaltar en rojo que es obligatorio
+        JTextField txtReferencia = new JTextField();
+        txtReferencia.setFont(new Font("Yu Gothic UI", Font.BOLD, 20));
+        pnlReferencia.add(lblRef);
+        pnlReferencia.add(txtReferencia);
+
+        panelDinamico.add(pnlEfectivo, "Efectivo");
+        panelDinamico.add(pnlReferencia, "Referencia");
+
+        CardLayout cl = (CardLayout) panelDinamico.getLayout();
+
+        comboMetodos.addActionListener(e -> {
+            if (comboMetodos.getSelectedItem().toString().equals("Efectivo")) {
+                cl.show(panelDinamico, "Efectivo");
+                txtRecibido.requestFocus();
+            } else {
+                cl.show(panelDinamico, "Referencia");
+                txtReferencia.requestFocus();
+            }
+        });
+
+        // Evento para calcular cambio en tiempo real y auto-formatear a miles
+        txtRecibido.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                // 1. Quitar caracteres no numéricos y autoformatear el texto visible
+                String textoPuro = txtRecibido.getText().replaceAll("[^0-9]", "");
+                if (!textoPuro.isEmpty()) {
+                    try {
+                        double valor = Double.parseDouble(textoPuro);
+                        String textoFormateado = String.format(java.util.Locale.forLanguageTag("es-CO"), "%,.0f", valor);
+                        txtRecibido.setText(textoFormateado);
+                    } catch (Exception ex) {}
+                } else {
+                    txtRecibido.setText("");
+                }
+
+                // 2. Calcular cambio usando siempre el texto numérico puro
+                try {
+                    double recibido = Double.parseDouble(textoPuro);
+                    double cambio = recibido - totalAPagar;
+                    if (cambio >= 0) {
+                        lblCambio.setText(String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", cambio));
+                        lblCambio.setForeground(new Color(0, 153, 51));
+                    } else {
+                        lblCambio.setText("Falta dinero");
+                        lblCambio.setForeground(Color.RED);
+                    }
+                } catch (NumberFormatException ex) {
+                    lblCambio.setText("$ 0");
+                    lblCambio.setForeground(Color.RED);
+                }
+            }
+        });
+
+        panelCentro.add(lblTotal);
+        panelCentro.add(Box.createRigidArea(new Dimension(0, 20)));
+        JLabel lblSelec = new JLabel("Método de Pago:");
+        lblSelec.setFont(new Font("Yu Gothic UI", Font.PLAIN, 18));
+        panelCentro.add(lblSelec);
+        panelCentro.add(comboMetodos);
+        panelCentro.add(Box.createRigidArea(new Dimension(0, 20)));
+        panelCentro.add(panelDinamico);
+
+        // Botones Inferiores
+        JPanel pnlBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        JButton btnPagar = new JButton("Completar Pago");
+        btnPagar.setBackground(new Color(0, 153, 51));
+        btnPagar.setForeground(Color.WHITE);
+        btnPagar.setFont(new Font("Yu Gothic UI", Font.BOLD, 18));
+
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.setBackground(new Color(204, 0, 0));
+        btnCancelar.setForeground(Color.WHITE);
+        btnCancelar.setFont(new Font("Yu Gothic UI", Font.BOLD, 18));
+
+        String[] resultado = new String[2]; // [0] = Método, [1] = Referencia
+        resultado[0] = null; 
+
+        btnPagar.addActionListener(e -> {
+            if (comboMetodos.getSelectedItem().toString().equals("Efectivo")) {
+                try {
+                    // Usar replaceAll("[^0-9]", "") para no estrellarse con los puntos del formato
+                    String textoPuro = txtRecibido.getText().replaceAll("[^0-9]", "");
+                    double recibido = Double.parseDouble(textoPuro);
+                    if (recibido < totalAPagar) {
+                        JOptionPane.showMessageDialog(dialog, "El efectivo recibido es insuficiente para pagar la cuenta.", "Dinero Insuficiente", JOptionPane.WARNING_MESSAGE);
+                        return;
+                    }
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(dialog, "Por favor ingrese una cantidad numérica válida en efectivo.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } else {
+                // Validación estricta para tarjetas y transferencias
+                if (txtReferencia.getText().trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(dialog, "Debe ingresar el número de aprobación o referencia obligatoriamente.", "Referencia Faltante", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+            
+            resultado[0] = comboMetodos.getSelectedItem().toString();
+            resultado[1] = comboMetodos.getSelectedItem().toString().equals("Efectivo") ? "Efectivo" : txtReferencia.getText().trim();
+            dialog.dispose();
+        });
+
+        btnCancelar.addActionListener(e -> dialog.dispose());
+
+        pnlBotones.add(btnPagar);
+        pnlBotones.add(btnCancelar);
+
+        dialog.add(panelCentro, BorderLayout.CENTER);
+        dialog.add(pnlBotones, BorderLayout.SOUTH);
+
+        // Abrir directamente con foco en efectivo
+        java.awt.EventQueue.invokeLater(() -> txtRecibido.requestFocus());
+        
+        dialog.setVisible(true);
+        return resultado;
     }
 }

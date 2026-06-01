@@ -36,20 +36,111 @@ public class Menu extends JFrame {
         
         // Configuración de la ventana principal
         this.setTitle("POS JJ - Sistema de Gestión");
-        this.setSize(1200, 700);
-        this.setMinimumSize(new Dimension(1000, 600));
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setLocationRelativeTo(null);
         this.setLayout(new BorderLayout());
+        
+        // Quitar la barra superior de Windows (minimizar, maximizar, cerrar)
+        this.setUndecorated(true);
+        // Ajustar a pantalla completa en cualquier dispositivo
+        this.setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         inicializarComponentes();
         configurarRoles();
     }
 
+    // Declaración de paneles para Lazy Initialization
+    private PanelDashboard panelDashboard;
+    private PanelProductos panelProductos;
+    private PanelVentas panelVentas;
+    private PanelInventario panelInventario;
+    private PanelUsuarios panelUsuarios;
+    private PanelReportes panelReportes;
+    private PanelConfiguracion panelConfiguracion;
+    
+    // Método centralizado para Inicialización Perezosa (Lazy Initialization)
+    public void mostrarPanel(String nombrePanel) {
+        switch (nombrePanel) {
+            case "Dashboard":
+                if (panelDashboard == null) {
+                    panelDashboard = new PanelDashboard(usuarioLogueado, this);
+                    panelContenido.add(panelDashboard, "Dashboard");
+                }
+                panelDashboard.refrescarDatos();
+                break;
+            case "Productos":
+                if (panelProductos == null) {
+                    panelProductos = new PanelProductos();
+                    panelContenido.add(panelProductos, "Productos");
+                }
+                panelProductos.cargarDatosTabla();
+                break;
+            case "Ventas":
+                if (panelVentas == null) {
+                    panelVentas = new PanelVentas(usuarioLogueado);
+                    panelContenido.add(panelVentas, "Ventas");
+                }
+                break;
+            case "Inventario":
+                if (panelInventario == null) {
+                    panelInventario = new PanelInventario();
+                    panelContenido.add(panelInventario, "Inventario");
+                }
+                panelInventario.cargarDatosTabla();
+                break;
+            case "Usuarios":
+                if (panelUsuarios == null) {
+                    panelUsuarios = new PanelUsuarios();
+                    panelContenido.add(panelUsuarios, "Usuarios");
+                }
+                break;
+            case "Reportes":
+                if (panelReportes == null) {
+                    panelReportes = new PanelReportes();
+                    panelContenido.add(panelReportes, "Reportes");
+                }
+                break;
+            case "Configuracion":
+                if (panelConfiguracion == null) {
+                    panelConfiguracion = new PanelConfiguracion(usuarioLogueado);
+                    panelContenido.add(panelConfiguracion, "Configuracion");
+                }
+                break;
+            case "Historial":
+                if (panelHistorial == null) {
+                    panelHistorial = new PanelHistorialFacturas(usuarioLogueado, this);
+                    panelContenido.add(panelHistorial, "Historial");
+                }
+                panelHistorial.setIdTurnoFiltro(-1); // Limpiar cualquier filtro previo
+                panelHistorial.refrescarDatos();
+                break;
+            case "DetalleFactura":
+                if (panelDetalle == null) {
+                    panelDetalle = new PanelDetalleFactura(this);
+                    panelContenido.add(panelDetalle, "DetalleFactura");
+                }
+                break;
+            case "ResumenVentas":
+                if (panelResumen == null) {
+                    panelResumen = new PanelResumenVentas(usuarioLogueado, this);
+                    panelContenido.add(panelResumen, "ResumenVentas");
+                }
+                panelResumen.refrescarDatos();
+                break;
+            case "VentasDelDia":
+                if (panelVentasDelDia == null) {
+                    panelVentasDelDia = new PanelVentasDelDia(usuarioLogueado, this);
+                    panelContenido.add(panelVentasDelDia, "VentasDelDia");
+                }
+                panelVentasDelDia.refrescarDatos();
+                break;
+        }
+        cardLayout.show(panelContenido, nombrePanel);
+    }
+
     private void inicializarComponentes() {
         // ================= PANEL LATERAL (SIDEBAR AZUL) =================
         panelLateral = new JPanel();
-        panelLateral.setPreferredSize(new Dimension(250, 0));
+        panelLateral.setPreferredSize(new Dimension(300, 0));
         panelLateral.setBackground(colorFondoLateral);
         panelLateral.setLayout(new BoxLayout(panelLateral, BoxLayout.Y_AXIS));
         panelLateral.setBorder(new EmptyBorder(20, 10, 20, 10));
@@ -74,18 +165,18 @@ public class Menu extends JFrame {
         // Creación de botones del menú
         lblCatPrincipal = crearEtiquetaCategoria("PRINCIPAL");
         panelLateral.add(lblCatPrincipal);
-        btnDashboard = crearBotonMenu("Dashboard");
+        btnDashboard = crearBotonMenu("Dashboard", "/img/reportes.png");
         panelLateral.add(btnDashboard);
         panelLateral.add(Box.createRigidArea(new Dimension(0, 15)));
 
         lblCatModulos = crearEtiquetaCategoria("MÓDULOS");
         panelLateral.add(lblCatModulos);
-        btnVentas = crearBotonMenu("Punto de Venta");
-        btnResumenVentas = crearBotonMenu("Ventas");
-        btnHistorial = crearBotonMenu("Historial Facturas");
-        btnInventario = crearBotonMenu("Inventario");
-        btnProductos = crearBotonMenu("Gestión Productos");
-        btnUsuarios = crearBotonMenu("Usuarios");
+        btnVentas = crearBotonMenu("Punto de Venta", "/img/venta.png");
+        btnResumenVentas = crearBotonMenu("Ventas", "/img/ventas.png");
+        btnHistorial = crearBotonMenu("Historial Facturas", "/img/historial.png");
+        btnInventario = crearBotonMenu("Inventario", "/img/inventario.png");
+        btnProductos = crearBotonMenu("Gestión Productos", "/img/producto.png");
+        btnUsuarios = crearBotonMenu("Usuarios", "/img/usuario.png");
         
         panelLateral.add(btnVentas);
         panelLateral.add(btnResumenVentas);
@@ -97,14 +188,14 @@ public class Menu extends JFrame {
 
         lblCatAdmin = crearEtiquetaCategoria("ADMINISTRACIÓN");
         panelLateral.add(lblCatAdmin);
-        btnReportes = crearBotonMenu("Reportes");
-        btnConfiguracion = crearBotonMenu("Configuración");
+        btnReportes = crearBotonMenu("Reportes", "/img/reporte.png");
+        btnConfiguracion = crearBotonMenu("Configuración", "/img/configuraciones.png");
         panelLateral.add(btnReportes);
         panelLateral.add(btnConfiguracion);
         
         panelLateral.add(Box.createVerticalGlue()); // Empujar "Cerrar sesión" hacia abajo
         
-        btnCerrarSesion = crearBotonMenu("Cerrar Sesión");
+        btnCerrarSesion = crearBotonMenu("Cerrar Sesión", "/img/cerrar-sesion.png");
         btnCerrarSesion.setForeground(new Color(255, 200, 200)); 
         panelLateral.add(btnCerrarSesion);
 
@@ -114,47 +205,18 @@ public class Menu extends JFrame {
         cardLayout = new CardLayout();
         panelContenido = new JPanel(cardLayout);
         panelContenido.setBackground(colorFondoPrincipal);
-
-        // Aquí agregaremos las diferentes vistas (Paneles)
-        panelContenido.add(new PanelDashboard(usuarioLogueado, this), "Dashboard");
-        panelContenido.add(new PanelProductos(), "Productos");
-        panelContenido.add(new PanelVentas(usuarioLogueado), "Ventas");
-        panelContenido.add(new PanelInventario(), "Inventario");
-        panelContenido.add(new PanelUsuarios(), "Usuarios");
-        panelContenido.add(new PanelReportes(), "Reportes");
-        panelContenido.add(new PanelConfiguracion(), "Configuracion");
-        
-        panelHistorial = new PanelHistorialFacturas(usuarioLogueado, this);
-        panelDetalle = new PanelDetalleFactura(this);
-        panelResumen = new PanelResumenVentas(usuarioLogueado, this);
-        panelVentasDelDia = new PanelVentasDelDia(usuarioLogueado, this);
-        
-        panelContenido.add(panelHistorial, "Historial");
-        panelContenido.add(panelDetalle, "DetalleFactura");
-        panelContenido.add(panelResumen, "ResumenVentas");
-        panelContenido.add(panelVentasDelDia, "VentasDelDia");
-
         this.add(panelContenido, BorderLayout.CENTER);
 
         // ================= EVENTOS DE BOTONES =================
-        btnDashboard.addActionListener(e -> cardLayout.show(panelContenido, "Dashboard"));
-        btnVentas.addActionListener(e -> cardLayout.show(panelContenido, "Ventas"));
-        
-        btnResumenVentas.addActionListener(e -> {
-            panelResumen.refrescarDatos();
-            cardLayout.show(panelContenido, "ResumenVentas");
-        });
-        
-        btnHistorial.addActionListener(e -> {
-            panelHistorial.refrescarDatos();
-            cardLayout.show(panelContenido, "Historial");
-        });
-        btnProductos.addActionListener(e -> cardLayout.show(panelContenido, "Productos"));
-        
-        btnUsuarios.addActionListener(e -> cardLayout.show(panelContenido, "Usuarios"));
-        btnReportes.addActionListener(e -> cardLayout.show(panelContenido, "Reportes"));
-        btnInventario.addActionListener(e -> cardLayout.show(panelContenido, "Inventario"));
-        btnConfiguracion.addActionListener(e -> cardLayout.show(panelContenido, "Configuracion"));
+        btnDashboard.addActionListener(e -> mostrarPanel("Dashboard"));
+        btnVentas.addActionListener(e -> mostrarPanel("Ventas"));
+        btnResumenVentas.addActionListener(e -> mostrarPanel("ResumenVentas"));
+        btnHistorial.addActionListener(e -> mostrarPanel("Historial"));
+        btnProductos.addActionListener(e -> mostrarPanel("Productos"));
+        btnUsuarios.addActionListener(e -> mostrarPanel("Usuarios"));
+        btnReportes.addActionListener(e -> mostrarPanel("Reportes"));
+        btnInventario.addActionListener(e -> mostrarPanel("Inventario"));
+        btnConfiguracion.addActionListener(e -> mostrarPanel("Configuracion"));
         
         btnCerrarSesion.addActionListener(e -> {
             new Login().setVisible(true);
@@ -170,15 +232,34 @@ public class Menu extends JFrame {
         return lbl;
     }
 
-    private JButton crearBotonMenu(String texto) {
+    private JButton crearBotonMenu(String texto, String rutaIcono) {
         JButton btn = new JButton(texto);
-        btn.setFont(new Font("Yu Gothic UI", Font.BOLD, 16));
+        btn.setFont(new Font("Yu Gothic UI", Font.BOLD, 18));
         btn.setForeground(colorTexto);
         btn.setBackground(colorFondoLateral);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
+        
+        try {
+            java.net.URL url = getClass().getResource(rutaIcono);
+            if (url != null) {
+                // Escalar el icono a 24x24 px
+                ImageIcon iconOriginal = new ImageIcon(url);
+                Image imgEscalada = iconOriginal.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
+                btn.setIcon(new ImageIcon(imgEscalada));
+                btn.setIconTextGap(15);
+            }
+        } catch (Exception e) {
+            System.out.println("Error cargando ícono: " + rutaIcono);
+        }
+
+        // Alinear al centro o a la izquierda según prefieras (izquierda se ve mejor con íconos)
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        // Margen izquierdo para empujar el ícono
+        btn.setBorder(BorderFactory.createEmptyBorder(5, 25, 5, 5));
+        
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btn.setMaximumSize(new Dimension(220, 40));
+        btn.setMaximumSize(new Dimension(280, 50));
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -209,29 +290,39 @@ public class Menu extends JFrame {
             btnConfiguracion.setVisible(false);
             
             // Redirigir por defecto al Punto de Venta
-            cardLayout.show(panelContenido, "Ventas");
+            mostrarPanel("Ventas");
         } else {
             // Administrador
             btnVentas.setVisible(false); // Ocultar Punto de Venta al Admin
-            cardLayout.show(panelContenido, "Dashboard");
+            mostrarPanel("Dashboard");
         }
     }
 
     // Método para permitir a los paneles cambiar de vista
     public void navegarA(String nombrePanel) {
-        if ("VentasDelDia".equals(nombrePanel)) {
-            panelVentasDelDia.refrescarDatos();
-        }
-        cardLayout.show(panelContenido, nombrePanel);
+        mostrarPanel(nombrePanel);
     }
     
     public void mostrarHistorial() {
+        mostrarPanel("Historial");
+    }
+    
+    public void mostrarHistorialTurno(int idTurno) {
+        if (panelHistorial == null) {
+            panelHistorial = new PanelHistorialFacturas(usuarioLogueado, this);
+            panelContenido.add(panelHistorial, "Historial");
+        }
+        panelHistorial.setIdTurnoFiltro(idTurno);
         panelHistorial.refrescarDatos();
         cardLayout.show(panelContenido, "Historial");
     }
     
     // Método para navegar al detalle con datos
     public void mostrarDetalleFactura(int idFactura, String numFactura) {
+        if (panelDetalle == null) {
+            panelDetalle = new PanelDetalleFactura(this);
+            panelContenido.add(panelDetalle, "DetalleFactura");
+        }
         panelDetalle.setFactura(idFactura, numFactura);
         cardLayout.show(panelContenido, "DetalleFactura");
     }

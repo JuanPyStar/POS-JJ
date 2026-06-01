@@ -12,8 +12,8 @@ import modelo.Factura;
 
 public class Ctrl_Factura {
 
-    public boolean guardarVenta(Factura factura, List<DetalleFactura> detalles, String metodoPago) {
-        boolean respuesta = false;
+    public int guardarVenta(Factura factura, List<DetalleFactura> detalles, String metodoPago) {
+        int respuestaId = 0;
         Connection cn = conexion.conectar();
         
         try {
@@ -120,7 +120,7 @@ public class Ctrl_Factura {
                 
                 // Confirmar transacción
                 cn.commit();
-                respuesta = true;
+                respuestaId = idFacturaGenerada;
             } else {
                 cn.rollback();
             }
@@ -134,12 +134,16 @@ public class Ctrl_Factura {
             }
         } finally {
             try {
-                if (cn != null) cn.close();
+                if (cn != null) {
+                    // Restauramos el autocommit para no afectar a otras consultas en la conexión compartida
+                    cn.setAutoCommit(true);
+                    cn.close();
+                }
             } catch (SQLException e) {
                 System.out.println("Error al cerrar conexión: " + e);
             }
         }
         
-        return respuesta;
+        return respuestaId;
     }
 }

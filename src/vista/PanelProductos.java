@@ -82,26 +82,39 @@ public class PanelProductos extends JPanel {
         panelWidgets.add(crearWidgetPanel("Stock bajo", lblStockBajo));
         panelWidgets.add(crearWidgetPanel("Categorías", lblTotalCategorias));
 
-        // --- BUSCADOR ---
-        JPanel panelBuscador = new JPanel(new BorderLayout(15, 0));
+        // --- BUSCADOR Y ACCIONES ---
+        JPanel panelBuscador = new JPanel(new BorderLayout());
         panelBuscador.setBackground(colorFondo);
+        panelBuscador.setBorder(new EmptyBorder(10, 0, 10, 0));
+        
+        // Panel Izquierdo: Filtros
+        JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        panelFiltros.setBackground(colorFondo);
+        
+        JLabel lblBuscar = new JLabel("Buscar:");
+        lblBuscar.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+        lblBuscar.setForeground(colorTexto);
         
         txtBuscar = new JTextField();
-        txtBuscar.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
+        txtBuscar.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
         txtBuscar.setBackground(Color.WHITE);
         txtBuscar.setForeground(colorTexto);
         txtBuscar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(colorAzulPrincipal, 2),
-                new EmptyBorder(5, 10, 5, 10)
+            BorderFactory.createLineBorder(new Color(200, 200, 200)),
+            new EmptyBorder(5, 10, 5, 10)
         ));
-        txtBuscar.setPreferredSize(new Dimension(0, 45));
-        txtBuscar.setToolTipText("Buscar por nombre, descripción o categoría");
+        txtBuscar.setPreferredSize(new Dimension(200, 35));
+        txtBuscar.setToolTipText("Buscar por nombre o descripción");
+
+        JLabel lblCat = new JLabel("Categoría:");
+        lblCat.setFont(new Font("Yu Gothic UI", Font.BOLD, 14));
+        lblCat.setForeground(colorTexto);
 
         cbCategorias = new JComboBox<>();
-        cbCategorias.setFont(new Font("Yu Gothic UI", Font.PLAIN, 16));
+        cbCategorias.setFont(new Font("Yu Gothic UI", Font.PLAIN, 14));
         cbCategorias.setBackground(Color.WHITE);
         cbCategorias.setForeground(colorTexto);
-        cbCategorias.setPreferredSize(new Dimension(250, 45));
+        cbCategorias.setPreferredSize(new Dimension(180, 35));
         cargarCategorias();
 
         JButton btnBuscar = new JButton("Buscar");
@@ -109,13 +122,40 @@ public class PanelProductos extends JPanel {
         btnBuscar.setForeground(Color.WHITE);
         btnBuscar.setFocusPainted(false);
         btnBuscar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnBuscar.setPreferredSize(new Dimension(100, 35));
         btnBuscar.addActionListener(e -> cargarDatosTabla());
+        
+        JButton btnLimpiar = new JButton("Limpiar");
+        btnLimpiar.setBackground(new Color(231, 76, 60)); // Rojo
+        btnLimpiar.setForeground(Color.WHITE);
+        btnLimpiar.setFocusPainted(false);
+        btnLimpiar.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnLimpiar.setPreferredSize(new Dimension(100, 35));
+        btnLimpiar.addActionListener(e -> {
+            txtBuscar.setText("");
+            if(cbCategorias.getItemCount() > 0) {
+                cbCategorias.setSelectedIndex(0);
+            }
+            cargarDatosTabla();
+        });
+
+        panelFiltros.add(lblBuscar);
+        panelFiltros.add(txtBuscar);
+        panelFiltros.add(lblCat);
+        panelFiltros.add(cbCategorias);
+        panelFiltros.add(btnBuscar);
+        panelFiltros.add(btnLimpiar);
+
+        // Panel Derecho: Acciones (Editar/Eliminar)
+        JPanel panelAcciones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        panelAcciones.setBackground(colorFondo);
 
         btnEditarProducto = new JButton("Editar");
         btnEditarProducto.setBackground(new Color(52, 152, 219));
         btnEditarProducto.setForeground(Color.WHITE);
         btnEditarProducto.setFocusPainted(false);
         btnEditarProducto.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnEditarProducto.setPreferredSize(new Dimension(100, 35));
         btnEditarProducto.addActionListener(e -> editarProductoSeleccionado());
 
         btnEliminarProducto = new JButton("Eliminar");
@@ -123,21 +163,14 @@ public class PanelProductos extends JPanel {
         btnEliminarProducto.setForeground(Color.WHITE);
         btnEliminarProducto.setFocusPainted(false);
         btnEliminarProducto.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnEliminarProducto.setPreferredSize(new Dimension(100, 35));
         btnEliminarProducto.addActionListener(e -> eliminarProductoSeleccionado());
 
-        panelBuscador.add(txtBuscar, BorderLayout.CENTER);
-        JPanel panelDerecha = new JPanel();
-        panelDerecha.setLayout(new BoxLayout(panelDerecha, BoxLayout.Y_AXIS));
-        panelDerecha.setBackground(colorFondo);
-        panelDerecha.add(cbCategorias);
-        panelDerecha.add(Box.createRigidArea(new Dimension(0, 10)));
-        JPanel panelBotones = new JPanel(new GridLayout(1, 3, 10, 0));
-        panelBotones.setBackground(colorFondo);
-        panelBotones.add(btnBuscar);
-        panelBotones.add(btnEditarProducto);
-        panelBotones.add(btnEliminarProducto);
-        panelDerecha.add(panelBotones);
-        panelBuscador.add(panelDerecha, BorderLayout.EAST);
+        panelAcciones.add(btnEditarProducto);
+        panelAcciones.add(btnEliminarProducto);
+
+        panelBuscador.add(panelFiltros, BorderLayout.WEST);
+        panelBuscador.add(panelAcciones, BorderLayout.EAST);
 
         // --- PANEL NORTE (Header + Widgets + Buscador) ---
         JPanel panelNorte = new JPanel();
@@ -193,46 +226,88 @@ public class PanelProductos extends JPanel {
     }
 
     public void cargarDatosTabla() {
-        // Limpiar la tabla
+        // Limpiar la tabla y mostrar un mensaje de carga si es posible
         modeloTabla.setRowCount(0);
+        Object[] filaCarga = new Object[]{"Cargando...", "", "", "", "", "", ""};
+        modeloTabla.addRow(filaCarga);
         
-        Ctrl_Producto ctrl = new Ctrl_Producto();
-        String filtro = txtBuscar != null ? txtBuscar.getText() : "";
-        int categoriaId = 0;
+        final String filtro = txtBuscar != null ? txtBuscar.getText() : "";
+        int tempCatId = 0;
         Object seleccionado = cbCategorias != null ? cbCategorias.getSelectedItem() : null;
         if (seleccionado instanceof Categoria) {
-            categoriaId = ((Categoria) seleccionado).getIdCategoria();
+            tempCatId = ((Categoria) seleccionado).getIdCategoria();
         }
+        final int categoriaIdFinal = tempCatId;
+        
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            List<Object[]> datos;
+            List<Object[]> stockBajo;
+            int totalCategorias;
 
-        List<Object[]> datos = ctrl.buscarProductos(filtro, categoriaId);
-        List<Object[]> stockBajo = ctrl.obtenerStockBajo();
-        int totalCategorias = ctrl.getTotalCategorias();
-        
-        lblTotalProductos.setText(String.valueOf(datos.size()));
-        lblStockBajo.setText(String.valueOf(stockBajo.size()));
-        lblTotalCategorias.setText(String.valueOf(totalCategorias));
-        
-        for (Object[] fila : datos) {
-            Object[] filaTabla = new Object[7];
-            filaTabla[0] = fila[0]; // idProducto
-            filaTabla[1] = fila[1]; // nombre
-            filaTabla[2] = fila[3]; // precio
-            filaTabla[3] = fila[2]; // cantidad
-            filaTabla[4] = fila[4]; // categoría
-            filaTabla[5] = fila[6]; // estado
-            filaTabla[6] = "Editar / Borrar";
-            
-            modeloTabla.addRow(filaTabla);
-        }
+            @Override
+            protected Void doInBackground() throws Exception {
+                Ctrl_Producto ctrl = new Ctrl_Producto();
+                datos = ctrl.buscarProductos(filtro, categoriaIdFinal);
+                stockBajo = ctrl.obtenerStockBajo();
+                totalCategorias = ctrl.getTotalCategorias();
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    lblTotalProductos.setText(String.valueOf(datos.size()));
+                    lblStockBajo.setText(String.valueOf(stockBajo.size()));
+                    lblTotalCategorias.setText(String.valueOf(totalCategorias));
+                    
+                    modeloTabla.setRowCount(0); // Quitar el mensaje de carga
+                    
+                    for (Object[] fila : datos) {
+                        Object[] filaTabla = new Object[7];
+                        filaTabla[0] = fila[0]; // idProducto
+                        filaTabla[1] = fila[1]; // nombre
+                        filaTabla[2] = fila[3]; // precio
+                        filaTabla[3] = fila[2]; // cantidad
+                        filaTabla[4] = fila[4]; // categoría
+                        filaTabla[5] = fila[6]; // estado
+                        filaTabla[6] = "Editar / Borrar";
+                        
+                        modeloTabla.addRow(filaTabla);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void cargarCategorias() {
         cbCategorias.removeAllItems();
-        cbCategorias.addItem("Todas las categorías");
-        Ctrl_Categoria ctrl = new Ctrl_Categoria();
-        for (Categoria categoria : ctrl.obtenerTodas()) {
-            cbCategorias.addItem(categoria);
-        }
+        cbCategorias.addItem("Cargando...");
+        
+        SwingWorker<List<Categoria>, Void> worker = new SwingWorker<List<Categoria>, Void>() {
+            @Override
+            protected List<Categoria> doInBackground() throws Exception {
+                Ctrl_Categoria ctrl = new Ctrl_Categoria();
+                return ctrl.obtenerTodas();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Categoria> categorias = get();
+                    cbCategorias.removeAllItems();
+                    cbCategorias.addItem("Todas las categorías");
+                    for (Categoria categoria : categorias) {
+                        cbCategorias.addItem(categoria);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        worker.execute();
     }
 
     private void editarProductoSeleccionado() {
