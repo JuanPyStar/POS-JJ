@@ -53,6 +53,20 @@ public class PanelResumenVentas extends JPanel {
         JPanel panelNorte = new JPanel(new BorderLayout());
         panelNorte.setBackground(colorFondo);
 
+        // Botón Volver
+        JButton btnVolver = new JButton("← Volver al Punto de Venta");
+        btnVolver.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnVolver.setForeground(colorAzulPrincipal);
+        btnVolver.setBackground(colorFondo);
+        btnVolver.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
+        btnVolver.setFocusPainted(false);
+        btnVolver.setContentAreaFilled(false);
+        btnVolver.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        btnVolver.addActionListener(e -> {
+            menuPrincipal.navegarA("Ventas");
+        });
+
         JLabel lblTitulo = new JLabel("Resumen de Ventas");
         lblTitulo.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
         lblTitulo.setForeground(colorAzulPrincipal);
@@ -61,8 +75,9 @@ public class PanelResumenVentas extends JPanel {
         lblTotalHoy.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 24));
         lblTotalHoy.setForeground(colorVerde);
 
-        JPanel pnlTitulos = new JPanel(new GridLayout(2, 1, 5, 5));
+        JPanel pnlTitulos = new JPanel(new GridLayout(3, 1, 5, 5));
         pnlTitulos.setBackground(colorFondo);
+        pnlTitulos.add(btnVolver);
         pnlTitulos.add(lblTitulo);
 
         JLabel lblInstruccion = new JLabel("(Haz clic en la gráfica para ver el detalle de todas las facturas)");
@@ -90,7 +105,7 @@ public class PanelResumenVentas extends JPanel {
         panelCentro.setBackground(colorFondo);
         panelCentro.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(220, 220, 220)),
-                "Ventas de los últimos 7 días"));
+                "Ventas de los últimos 7 turnos"));
         panelCentro.add(chartPanel, BorderLayout.CENTER);
 
         this.add(panelCentro, BorderLayout.CENTER);
@@ -98,8 +113,16 @@ public class PanelResumenVentas extends JPanel {
 
     private void cargarDatosHoy() {
         Connection cn = conexion.conectar();
+        controlador.Ctrl_Turno ctrlTurno = new controlador.Ctrl_Turno();
+        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
         try {
-            String sql = "SELECT SUM(totalPagar) as totalHoy FROM tb_factura WHERE estado = 1";
+            String sql = "SELECT COALESCE(SUM(totalPagar), 0) as totalHoy FROM tb_factura WHERE estado = 1 ";
+
+            if (turnoActivo != null) {
+                sql += " AND idTurno = " + turnoActivo.getIdTurno() + " ";
+            } else {
+                sql += " AND DATE(fechaFactura) = CURDATE() ";
+            }
 
             boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
@@ -126,17 +149,17 @@ public class PanelResumenVentas extends JPanel {
         datosGrafica.clear();
         Connection cn = conexion.conectar();
         try {
-            // Últimos 7 días con ventas registradas
-            String sql = "SELECT DATE(fechaFactura) as fecha, SUM(totalPagar) as total " +
-                         "FROM tb_factura " +
-                         "WHERE estado = 1 ";
+            // Últimos 7 turnos
+            String sql = "SELECT t.idTurno, t.fechaApertura as fecha, " +
+                         "(SELECT COALESCE(SUM(totalPagar), 0) FROM tb_factura WHERE idTurno = t.idTurno AND estado = 1) as total " +
+                         "FROM tb_turno t WHERE 1=1 ";
 
             boolean isAdmin = usuarioLogueado.getRol() != null && (usuarioLogueado.getRol().equalsIgnoreCase("Administrador") || usuarioLogueado.getRol().equalsIgnoreCase("Admin"));
             if (!isAdmin) {
-                sql += "AND idUsuario = ? ";
+                sql += "AND t.idUsuario = ? ";
             }
 
-            sql += "GROUP BY DATE(fechaFactura) ORDER BY DATE(fechaFactura) DESC LIMIT 7";
+            sql += "ORDER BY t.idTurno DESC LIMIT 7";
 
             PreparedStatement ps = cn.prepareStatement(sql);
             if (!isAdmin) {
@@ -145,7 +168,10 @@ public class PanelResumenVentas extends JPanel {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                datosGrafica.add(new VentaDia(rs.getString("fecha"), rs.getDouble("total")));
+                String fechaCompleta = rs.getString("fecha");
+                // T1 28/05
+                String etiqueta = "T" + rs.getInt("idTurno") + " " + fechaCompleta.substring(8, 10) + "/" + fechaCompleta.substring(5, 7);
+                datosGrafica.add(new VentaDia(etiqueta, rs.getDouble("total")));
             }
             cn.close();
 
@@ -226,10 +252,9 @@ public class PanelResumenVentas extends JPanel {
 
                 // Texto Fecha (Eje X)
                 g2.setColor(Color.DARK_GRAY);
-                String[] partes = v.fecha.split("-");
-                String fechaCorta = partes.length == 3 ? partes[2] + "/" + partes[1] : v.fecha;
-                int textWidth = g2.getFontMetrics().stringWidth(fechaCorta);
-                g2.drawString(fechaCorta, x + (barWidth - textWidth) / 2, height - padding + 20);
+                String etiqueta = v.fecha;
+                int textWidth = g2.getFontMetrics().stringWidth(etiqueta);
+                g2.drawString(etiqueta, x + (barWidth - textWidth) / 2, height - padding + 20);
 
                 // Texto Total arriba de la barra
                 String strTotal = String.format(java.util.Locale.forLanguageTag("es-CO"), "$ %,.0f", v.total);

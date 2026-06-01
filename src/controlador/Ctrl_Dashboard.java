@@ -19,11 +19,16 @@ public class Ctrl_Dashboard {
     public int getTotalVentasDia() {
         int total = 0;
         Connection cn = conexion.conectar();
+        Ctrl_Turno ctrlTurno = new Ctrl_Turno();
+        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
         try {
-            // Asumiendo que fechaFactura es DATETIME
-            PreparedStatement consulta = cn.prepareStatement(
-                "SELECT COUNT(*) as total FROM tb_factura WHERE DATE(fechaFactura) = CURDATE() AND estado = 1"
-            );
+            String sql;
+            if (turnoActivo != null) {
+                sql = "SELECT COUNT(*) as total FROM tb_factura WHERE idTurno = " + turnoActivo.getIdTurno() + " AND estado = 1";
+            } else {
+                sql = "SELECT COUNT(*) as total FROM tb_factura WHERE DATE(fechaFactura) = CURDATE() AND estado = 1";
+            }
+            PreparedStatement consulta = cn.prepareStatement(sql);
             ResultSet rs = consulta.executeQuery();
             if (rs.next()) {
                 total = rs.getInt("total");
@@ -38,10 +43,16 @@ public class Ctrl_Dashboard {
     public double getTotalIngresosDia() {
         double total = 0.0;
         Connection cn = conexion.conectar();
+        Ctrl_Turno ctrlTurno = new Ctrl_Turno();
+        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
         try {
-            PreparedStatement consulta = cn.prepareStatement(
-                "SELECT SUM(totalPagar) as ingresos FROM tb_factura WHERE DATE(fechaFactura) = CURDATE() AND estado = 1"
-            );
+            String sql;
+            if (turnoActivo != null) {
+                sql = "SELECT SUM(totalPagar) as ingresos FROM tb_factura WHERE idTurno = " + turnoActivo.getIdTurno() + " AND estado = 1";
+            } else {
+                sql = "SELECT SUM(totalPagar) as ingresos FROM tb_factura WHERE DATE(fechaFactura) = CURDATE() AND estado = 1";
+            }
+            PreparedStatement consulta = cn.prepareStatement(sql);
             ResultSet rs = consulta.executeQuery();
             if (rs.next()) {
                 total = rs.getDouble("ingresos");
@@ -95,11 +106,19 @@ public class Ctrl_Dashboard {
     public List<Object[]> getFacturasDia() {
         List<Object[]> facturas = new ArrayList<>();
         Connection cn = conexion.conectar();
+        Ctrl_Turno ctrlTurno = new Ctrl_Turno();
+        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
         try {
+            String condicion;
+            if (turnoActivo != null) {
+                condicion = "f.idTurno = " + turnoActivo.getIdTurno() + " ";
+            } else {
+                condicion = "DATE(f.fechaFactura) = CURDATE() ";
+            }
             String sql = "SELECT f.idFactura, f.numeroFactura, f.fechaFactura, f.totalPagar, p.metodoPago " +
                          "FROM tb_factura f " +
                          "LEFT JOIN tb_pago p ON f.idFactura = p.idFactura " +
-                         "WHERE DATE(f.fechaFactura) = CURDATE() AND f.estado = 1 " +
+                         "WHERE " + condicion + "AND f.estado = 1 " +
                          "ORDER BY f.idFactura DESC";
             
             PreparedStatement ps = cn.prepareStatement(sql);
@@ -233,7 +252,13 @@ public class Ctrl_Dashboard {
                         "WHERE f.estado = 1 ";
             
             if ("diario".equals(tipo)) {
-                sql += "AND DATE(f.fechaFactura) = CURDATE() ";
+                Ctrl_Turno ctrlTurno = new Ctrl_Turno();
+                modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
+                if (turnoActivo != null) {
+                    sql += "AND f.idTurno = " + turnoActivo.getIdTurno() + " ";
+                } else {
+                    sql += "AND DATE(f.fechaFactura) = CURDATE() ";
+                }
             } else if ("mensual".equals(tipo)) {
                 sql += "AND MONTH(f.fechaFactura) = MONTH(NOW()) AND YEAR(f.fechaFactura) = YEAR(NOW()) ";
             }
@@ -265,28 +290,26 @@ public class Ctrl_Dashboard {
         List<Object[]> ventas = new ArrayList<>();
         Connection cn = conexion.conectar();
         try {
-            String sql = "SELECT DATE(f.fechaFactura) as fecha, SUM(f.totalPagar) as total " +
-                         "FROM tb_factura f " +
-                         "WHERE f.estado = 1 AND DATE(f.fechaFactura) >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) " +
-                         "GROUP BY DATE(f.fechaFactura) ORDER BY fecha ASC";
+            // Mostrar los últimos 7 turnos en la gráfica
+            String sql = "SELECT t.idTurno, t.fechaApertura, " +
+                         "(SELECT COALESCE(SUM(totalPagar), 0) FROM tb_factura WHERE idTurno = t.idTurno AND estado = 1) as totalVentasCalculado " +
+                         "FROM tb_turno t ORDER BY t.idTurno DESC LIMIT 7";
             PreparedStatement ps = cn.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
 
-            Map<LocalDate, Double> totalesPorDia = new HashMap<>();
+            List<Object[]> turnosList = new ArrayList<>();
             while (rs.next()) {
-                Date fecha = rs.getDate("fecha");
-                if (fecha != null) {
-                    totalesPorDia.put(fecha.toLocalDate(), rs.getDouble("total"));
-                }
+                String fechaCompleta = rs.getString("fechaApertura");
+                // Extraer 'dd/MM HH:mm'
+                String etiqueta = "T" + rs.getInt("idTurno") + " " + fechaCompleta.substring(8, 10) + "/" + fechaCompleta.substring(5, 7);
+                double total = rs.getDouble("totalVentasCalculado");
+                turnosList.add(new Object[]{etiqueta, total});
             }
             cn.close();
 
-            LocalDate hoy = LocalDate.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
-            for (int i = 6; i >= 0; i--) {
-                LocalDate dia = hoy.minusDays(i);
-                double total = totalesPorDia.getOrDefault(dia, 0.0);
-                ventas.add(new Object[]{dia.format(formatter), total});
+            // Invertir para que el más antiguo salga a la izquierda y el más nuevo a la derecha
+            for (int i = turnosList.size() - 1; i >= 0; i--) {
+                ventas.add(turnosList.get(i));
             }
         } catch (SQLException e) {
             System.out.println("Error en getVentasSemanales: " + e);

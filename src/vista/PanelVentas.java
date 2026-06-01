@@ -67,7 +67,60 @@ public class PanelVentas extends JPanel {
         lblTitulo.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 28));
         lblTitulo.setForeground(colorAzulPrincipal);
 
-        panelHeader.add(lblTitulo, BorderLayout.WEST);
+        // Cargar estado inicial del turno
+        controlador.Ctrl_Turno ctrlTurno = new controlador.Ctrl_Turno();
+        modelo.Turno turnoActivo = ctrlTurno.getTurnoActivo();
+
+        JButton btnAbrirTurno = new JButton("Abrir Turno");
+        btnAbrirTurno.setBackground(new Color(0, 153, 51)); // Verde
+        btnAbrirTurno.setForeground(Color.WHITE);
+        btnAbrirTurno.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnAbrirTurno.setFocusPainted(false);
+        btnAbrirTurno.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        
+        JButton btnCerrarTurno = new JButton("Cerrar Turno");
+        btnCerrarTurno.setBackground(new Color(204, 0, 0)); // Rojo
+        btnCerrarTurno.setForeground(Color.WHITE);
+        btnCerrarTurno.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 14));
+        btnCerrarTurno.setFocusPainted(false);
+        btnCerrarTurno.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+
+        // Habilitar/deshabilitar según estado
+        if (turnoActivo != null) {
+            btnAbrirTurno.setEnabled(false);
+            btnCerrarTurno.setEnabled(true);
+        } else {
+            btnAbrirTurno.setEnabled(true);
+            btnCerrarTurno.setEnabled(false);
+        }
+
+        btnAbrirTurno.addActionListener(e -> {
+            vista.FrmTurno frm = new vista.FrmTurno(null, true, usuario.getIdUsuario());
+            frm.setVisible(true);
+            // Actualizar botones después de cerrar la ventana
+            if (ctrlTurno.getTurnoActivo() != null) {
+                btnAbrirTurno.setEnabled(false);
+                btnCerrarTurno.setEnabled(true);
+            }
+        });
+
+        btnCerrarTurno.addActionListener(e -> {
+            vista.FrmTurno frm = new vista.FrmTurno(null, true, usuario.getIdUsuario());
+            frm.setVisible(true);
+            // Actualizar botones después de cerrar la ventana
+            if (ctrlTurno.getTurnoActivo() == null) {
+                btnAbrirTurno.setEnabled(true);
+                btnCerrarTurno.setEnabled(false);
+            }
+        });
+
+        JPanel pnlIzquierdoHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        pnlIzquierdoHeader.setBackground(colorFondo);
+        pnlIzquierdoHeader.add(lblTitulo);
+        pnlIzquierdoHeader.add(btnAbrirTurno);
+        pnlIzquierdoHeader.add(btnCerrarTurno);
+
+        panelHeader.add(pnlIzquierdoHeader, BorderLayout.WEST);
         this.add(panelHeader, BorderLayout.NORTH);
 
         JPanel panelSplit = new JPanel(new BorderLayout(20, 0));

@@ -90,7 +90,7 @@ public class PanelDashboard extends JPanel {
             new EmptyBorder(20, 20, 20, 20)
         ));
 
-        JLabel lblGrafica = new JLabel("Ventas Semanales", SwingConstants.LEFT);
+        JLabel lblGrafica = new JLabel("Últimos Turnos", SwingConstants.LEFT);
         lblGrafica.setFont(new Font("Yu Gothic UI Semibold", Font.BOLD, 22));
         lblGrafica.setForeground(colorTexto);
         panelGraficas.add(lblGrafica, BorderLayout.NORTH);
