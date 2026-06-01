@@ -140,7 +140,7 @@ public class Ctrl_Factura {
                     cn.close();
                 }
             } catch (SQLException e) {
-                System.out.println("Error al cerrar conexión: " + e);
+                System.out.println("Error al cerrar conexión : " + e);
             }
         }
         
