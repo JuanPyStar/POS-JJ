@@ -2,7 +2,7 @@
 
 # 🛒 POS JJ
 
-<img src="images/logo.png" alt="POS JJ Logo" width="250">
+<img src="POS-JJ/src/images/logo.png" alt="POS JJ Logo" width="250">
 
 ### Sistema de Punto de Venta desarrollado en Java
 
