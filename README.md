@@ -111,83 +111,61 @@ Su objetivo es brindar una solución rápida, organizada y eficiente para la adm
 
 ## 🔐 Inicio de Sesión
 
-> Agregar captura aquí.
-
-```md
-docs/images/login.png
-```
+![Login](src/images/login.png)
 
 ---
 
 ## 📊 Dashboard
 
-> Agregar captura aquí.
-
-```md
-docs/images/dashboard.png
-```
+![Dashboard](src/images/dashboard.png)
 
 ---
 
 ## 💰 Punto de Venta
 
-> Agregar captura aquí.
+![Punto de Venta](src/images/ventas.png)
 
-```md
-docs/images/ventas.png
-```
+---
+
+## 🛒 Punto de Venta (Vista Cajero)
+
+![Inicio Cajero](src/images/inicio%20cajero.png)
 
 ---
 
 ## 📦 Gestión de Productos
 
-> Agregar captura aquí.
-
-```md
-docs/images/productos.png
-```
+![Gestión de Productos](src/images/gestion%20productos.png)
 
 ---
 
 ## 📦 Inventario
 
-> Agregar captura aquí.
-
-```md
-docs/images/inventario.png
-```
+![Inventario](src/images/invnetario.png)
 
 ---
 
-## 👥 Usuarios
+## 👥 Gestión de Usuarios
 
-> Agregar captura aquí.
-
-```md
-docs/images/usuarios.png
-```
+![Usuarios](src/images/usuarios.png)
 
 ---
 
 ## 📈 Reportes
 
-> Agregar captura aquí.
-
-```md
-docs/images/reportes.png
-```
+![Reportes](src/images/reportes.png)
 
 ---
 
-## ⚙ Configuración
+## ⚙️ Configuración
 
-> Agregar captura aquí.
-
-```md
-docs/images/configuracion.png
-```
+![Configuración](src/images/configuracion.png)
 
 ---
+
+## 📊 Reporte de Ventas por Barras
+
+![Ventas Barras](src/images/ventas%20barras.png)
 
 # 🏛 Arquitectura del Proyecto
 
